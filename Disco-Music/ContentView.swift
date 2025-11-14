@@ -1,5 +1,5 @@
 import SwiftUI
-import SceneKit
+import RealityKit
 import Combine
 
 // MARK: - Data Models
@@ -39,7 +39,6 @@ class CountriesDataProvider: NSObject, ObservableObject {
     }
     
     func loadCountries() {
-        // Sample dataset - expandable with JSON loading
         countries = [
             Country(name: "United States", capital: "Washington, D.C.", latitude: 38.9072, longitude: -77.0369, population: 331002651, flagEmoji: "🇺🇸", region: "North America", currency: "USD"),
             Country(name: "United Kingdom", capital: "London", latitude: 51.5074, longitude: -0.1278, population: 67886011, flagEmoji: "🇬🇧", region: "Europe", currency: "GBP"),
@@ -65,7 +64,6 @@ class CountriesDataProvider: NSObject, ObservableObject {
     }
     
     func loadFromJSON(filename: String) {
-        // Extensible for loading from JSON files
         guard let url = Bundle.main.url(forResource: filename, withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let decoded = try? JSONDecoder().decode([Country].self, from: data) else {
@@ -75,231 +73,227 @@ class CountriesDataProvider: NSObject, ObservableObject {
     }
 }
 
-// MARK: - SceneKit Globe Scene
+// MARK: - RealityKit Globe Coordinator
 
-class GlobeScene: SCNScene {
-    let globeNode: SCNNode
-    let markerNodes: [SCNNode]
+class GlobeCoordinator: NSObject {
+    var arView: ARView
+    var globeEntity: ModelEntity?
+    var markerEntities: [UUID: ModelEntity] = [:]
     var countries: [Country]
+    var onCountryTapped: ((Country) -> Void)?
     
-    init(countries: [Country]) {
+    private var lastPanTranslation: CGPoint = .zero
+    private var currentRotation: simd_quatf = simd_quatf(angle: 0, axis: [0, 1, 0])
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(arView: ARView, countries: [Country]) {
+        self.arView = arView
         self.countries = countries
-        self.globeNode = SCNNode()
-        self.markerNodes = []
         super.init()
         
         setupScene()
         setupGlobe()
         setupMarkers()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) not implemented")
+        setupGestures()
+        startRotationAnimation()
     }
     
     private func setupScene() {
-        // Camera
-        let cameraNode = SCNNode()
-        cameraNode.camera = SCNCamera()
-        cameraNode.position = SCNVector3(x: 0, y: 0, z: 5)
-        rootNode.addChildNode(cameraNode)
+        // Create anchor for the scene
+        let anchor = AnchorEntity(world: [0, 0, 0])
+        arView.scene.addAnchor(anchor)
         
-        // Lighting
-        let ambientLight = SCNNode()
-        ambientLight.light = SCNLight()
-        ambientLight.light?.type = .ambient
-        ambientLight.light?.color = UIColor(white: 0.4, alpha: 1.0)
-        rootNode.addChildNode(ambientLight)
-        
-        let directionalLight = SCNNode()
-        directionalLight.light = SCNLight()
-        directionalLight.light?.type = .directional
-        directionalLight.light?.intensity = 1000
-        directionalLight.position = SCNVector3(x: 5, y: 5, z: 5)
-        directionalLight.look(at: SCNVector3Zero)
-        rootNode.addChildNode(directionalLight)
+        // Configure lighting
+        let directionalLight = DirectionalLight()
+        directionalLight.light.intensity = 2000
+        directionalLight.look(at: [0, 0, 0], from: [5, 5, 5], relativeTo: nil)
+        anchor.addChild(directionalLight)
     }
     
     private func setupGlobe() {
-        let sphere = SCNSphere(radius: 1.0)
+        // Create globe mesh
+        let globeMesh = MeshResource.generateSphere(radius: 1.0)
         
-        // Material for Earth texture
-        let material = SCNMaterial()
-        material.diffuse.contents = UIImage(named: "earth_texture") ?? UIColor.blue
-        material.specular.contents = UIColor(white: 0.1, alpha: 1.0)
-        material.shininess = 0.1
+        // Create material
+        var material = SimpleMaterial()
         
-        // Fix texture wrapping to align with coordinates
-        material.diffuse.wrapS = .repeat
-        material.diffuse.wrapT = .repeat
+        // Try to load Earth texture, fallback to blue color
+        if let texture = try? TextureResource.load(named: "earth_texture") {
+            material.color = .init(tint: .white, texture: .init(texture))
+        } else {
+            material.color = .init(tint: .blue)
+        }
         
-        sphere.materials = [material]
+        material.roughness = .init(floatLiteral: 0.8)
+        material.metallic = .init(floatLiteral: 0.1)
         
-        globeNode.geometry = sphere
+        // Create globe entity
+        let globe = ModelEntity(mesh: globeMesh, materials: [material])
+        globe.position = [0, 0, -3]
         
-        // FIXED: No initial rotation needed - markers will align with texture
-        // Most Earth textures have 0° longitude at the center, which aligns with
-        // the standard spherical coordinate system when no rotation is applied
+        // Store reference
+        globeEntity = globe
         
-        rootNode.addChildNode(globeNode)
-        
-        // Add rotation animation
-        let rotation = SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 60))
-        globeNode.runAction(rotation)
-    }
-    
-    private func setupMarkers() {
-        for country in countries {
-            let marker = createMarker(for: country)
-            globeNode.addChildNode(marker)
+        // Add to scene
+        if let anchor = arView.scene.anchors.first {
+            anchor.addChild(globe)
         }
     }
     
-    private func createMarker(for country: Country) -> SCNNode {
-        let marker = SCNNode()
+    private func setupMarkers() {
+        guard let globe = globeEntity else { return }
         
-        // Marker geometry - small sphere
-        let sphere = SCNSphere(radius: 0.03)
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor.red
-        material.emission.contents = UIColor.red
-        sphere.materials = [material]
-        
-        marker.geometry = sphere
-        marker.name = country.id.uuidString
-        
-        // Convert lat/long to 3D position
-        let position = latLongToSCNVector3(latitude: country.latitude, longitude: country.longitude, radius: 1.01)
-        marker.position = position
-        
-        return marker
+        for country in countries {
+            let markerMesh = MeshResource.generateSphere(radius: 0.03)
+            var markerMaterial = UnlitMaterial(color: .red)
+            markerMaterial.baseColor = MaterialColorParameter.color(.red)
+            
+            let marker = ModelEntity(mesh: markerMesh, materials: [markerMaterial])
+            
+            // Convert lat/long to position
+            let position = latLongToSIMD3(latitude: country.latitude, longitude: country.longitude, radius: 1.01)
+            marker.position = position
+            
+            // Store country ID in name for tap detection
+            marker.name = country.id.uuidString
+            
+            // Enable collision for tap detection
+            marker.generateCollisionShapes(recursive: false)
+            
+            globe.addChild(marker)
+            markerEntities[country.id] = marker
+        }
     }
     
-    private func latLongToSCNVector3(latitude: Double, longitude: Double, radius: Double) -> SCNVector3 {
-        // FIXED: Corrected spherical to Cartesian coordinate conversion
-        // Standard spherical coordinates: (r, θ, φ) where:
-        // θ (theta) = longitude (rotation around Y-axis)
-        // φ (phi) = latitude (angle from equator)
-        
-        // Convert degrees to radians
+    private func latLongToSIMD3(latitude: Double, longitude: Double, radius: Double) -> SIMD3<Float> {
         let lat = latitude * .pi / 180.0
         let lon = longitude * .pi / 180.0
-        
-        // Standard spherical to Cartesian conversion for SceneKit
-        // X-axis points right, Y-axis points up, Z-axis points toward viewer
-        // Longitude 0° should be at positive Z (front of globe)
-        // Latitude 0° (equator) should be at Y = 0
         
         let x = radius * cos(lat) * sin(lon)
         let y = radius * sin(lat)
         let z = radius * cos(lat) * cos(lon)
         
-        return SCNVector3(x: Float(x), y: Float(y), z: Float(z))
-    }
-}
-
-// MARK: - SceneKit View Coordinator
-
-class GlobeSceneCoordinator: NSObject, SCNSceneRendererDelegate {
-    var parent: GlobeSceneView
-    var lastPanLocation: CGPoint?
-    
-    init(_ parent: GlobeSceneView) {
-        self.parent = parent
+        return SIMD3<Float>(Float(x), Float(y), Float(z))
     }
     
-    @objc func handleTap(_ gesture: UITapGestureRecognizer) {
-        let scnView = gesture.view as! SCNView
-        let location = gesture.location(in: scnView)
+    private func setupGestures() {
+        // Tap gesture
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        arView.addGestureRecognizer(tapGesture)
         
-        let hitResults = scnView.hitTest(location, options: [:])
+        // Pan gesture
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        arView.addGestureRecognizer(panGesture)
         
-        if let hit = hitResults.first, let nodeName = hit.node.name,
-           let uuid = UUID(uuidString: nodeName),
-           let country = parent.dataProvider.countries.first(where: { $0.id == uuid }) {
-            parent.selectedCountry = country
+        // Pinch gesture
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        arView.addGestureRecognizer(pinchGesture)
+    }
+    
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: arView)
+        
+        if let entity = arView.entity(at: location) {
+            let entityName = entity.name
+            if let uuid = UUID(uuidString: entityName),
+               let country = countries.first(where: { $0.id == uuid }) {
+                onCountryTapped?(country)
+            }
         }
     }
     
-    @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
-        guard let scnView = gesture.view as? SCNView,
-              let scene = scnView.scene as? GlobeScene else {
-            return
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        guard let globe = globeEntity else { return }
+        
+        let translation = gesture.translation(in: arView)
+        
+        if gesture.state == .began {
+            lastPanTranslation = .zero
         }
         
-        let translation = gesture.translation(in: scnView)
+        let sensitivity: Float = 0.005
+        let deltaX = Float(translation.x - lastPanTranslation.x) * sensitivity
+        let deltaY = Float(translation.y - lastPanTranslation.y) * sensitivity
         
-        // Sensitivity for smooth rotation
-        let sensitivity: Float = 0.003
-        let rotationY = Float(translation.x) * sensitivity
-        let rotationX = Float(translation.y) * sensitivity
+        // Create rotation quaternions
+        let rotationY = simd_quatf(angle: deltaX, axis: [0, 1, 0])
+        let rotationX = simd_quatf(angle: deltaY, axis: [1, 0, 0])
         
-        // Apply rotation to globe node directly
-        let currentRotation = scene.globeNode.eulerAngles
+        // Apply rotation
+        currentRotation = rotationY * currentRotation * rotationX
+        globe.orientation = currentRotation
         
-        // Constrain X rotation (latitude-like) to prevent flipping
-        var newRotationX = currentRotation.x - rotationX
-        newRotationX = max(-Float.pi / 2, min(Float.pi / 2, newRotationX))
+        lastPanTranslation = translation
         
-        // Y rotation (longitude-like) can be free
-        let newRotationY = currentRotation.y + rotationY
-        
-        scene.globeNode.eulerAngles = SCNVector3(newRotationX, newRotationY, currentRotation.z)
-        
-        gesture.setTranslation(.zero, in: scnView)
+        if gesture.state == .ended {
+            lastPanTranslation = .zero
+        }
     }
     
-    @objc func handlePinch(_ gesture: UIPinchGestureRecognizer) {
-        guard let scnView = gesture.view as? SCNView,
-              let cameraNode = scnView.pointOfView else {
-            return
-        }
-        
-        let scale = Float(gesture.scale)
-        var position = cameraNode.position
+    @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        guard let globe = globeEntity else { return }
         
         if gesture.state == .changed {
+            let scale = Float(gesture.scale)
+            var position = globe.position
+            
             let newZ = position.z / scale
-            position.z = max(2.5, min(10.0, newZ))
-            cameraNode.position = position
+            position.z = max(-10.0, min(-1.5, newZ))
+            globe.position = position
+            
             gesture.scale = 1.0
         }
     }
+    
+    private func startRotationAnimation() {
+        guard let globe = globeEntity else { return }
+        
+        Timer.publish(every: 0.016, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                let rotationSpeed: Float = 0.001
+                let rotation = simd_quatf(angle: rotationSpeed, axis: [0, 1, 0])
+                self.currentRotation = rotation * self.currentRotation
+                globe.orientation = self.currentRotation
+            }
+            .store(in: &cancellables)
+    }
 }
 
-// MARK: - SwiftUI SceneKit View Wrapper
+// MARK: - RealityKit View Wrapper
 
-struct GlobeSceneView: UIViewRepresentable {
+struct GlobeRealityView: UIViewRepresentable {
     @ObservedObject var dataProvider: CountriesDataProvider
     @Binding var selectedCountry: Country?
     
-    func makeUIView(context: Context) -> SCNView {
-        let scnView = SCNView()
-        scnView.scene = GlobeScene(countries: dataProvider.countries)
-        scnView.backgroundColor = .black
-        scnView.allowsCameraControl = false
-        scnView.autoenablesDefaultLighting = false
-        scnView.antialiasingMode = .multisampling4X
+    func makeUIView(context: Context) -> ARView {
+        let arView = ARView(frame: .zero)
+        arView.environment.background = .color(.black)
         
-        // Gestures
-        let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(GlobeSceneCoordinator.handleTap(_:)))
-        scnView.addGestureRecognizer(tapGesture)
+        // Disable AR features for non-AR use
+        arView.automaticallyConfigureSession = false
         
-        let panGesture = UIPanGestureRecognizer(target: context.coordinator, action: #selector(GlobeSceneCoordinator.handlePan(_:)))
-        scnView.addGestureRecognizer(panGesture)
+        // Create coordinator
+        let coordinator = GlobeCoordinator(arView: arView, countries: dataProvider.countries)
+        coordinator.onCountryTapped = { country in
+            selectedCountry = country
+        }
+        context.coordinator.globeCoordinator = coordinator
         
-        let pinchGesture = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(GlobeSceneCoordinator.handlePinch(_:)))
-        scnView.addGestureRecognizer(pinchGesture)
-        
-        return scnView
+        return arView
     }
     
-    func updateUIView(_ uiView: SCNView, context: Context) {
-        // Update scene if data changes
+    func updateUIView(_ uiView: ARView, context: Context) {
+        // Update if needed
     }
     
-    func makeCoordinator() -> GlobeSceneCoordinator {
-        GlobeSceneCoordinator(self)
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    class Coordinator {
+        var globeCoordinator: GlobeCoordinator?
     }
 }
 
@@ -439,7 +433,7 @@ struct AboutView: View {
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
-                    Text("Explore the world through an interactive 3D globe. Tap on capital cities to learn more about different countries.")
+                    Text("Explore the world through an interactive 3D globe powered by RealityKit. Tap on capital cities to learn more about different countries.")
                         .font(.body)
                     
                     Divider()
@@ -448,7 +442,7 @@ struct AboutView: View {
                         Text("Features")
                             .font(.headline)
                         
-                        FeatureRow(icon: "globe", text: "Interactive 3D globe with real-time rendering")
+                        FeatureRow(icon: "globe", text: "Interactive 3D globe with RealityKit rendering")
                         FeatureRow(icon: "hand.draw", text: "Drag to rotate, pinch to zoom")
                         FeatureRow(icon: "mappin.circle", text: "Tap capital cities for detailed information")
                         FeatureRow(icon: "list.bullet", text: "Browse all countries in list view")
@@ -456,7 +450,7 @@ struct AboutView: View {
                     
                     Divider()
                     
-                    Text("Built with SwiftUI and SceneKit")
+                    Text("Built with SwiftUI and RealityKit")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
@@ -500,7 +494,7 @@ struct ContentView: View {
             // Main content based on selected tab
             switch selectedTab {
             case .globe:
-                GlobeSceneView(dataProvider: dataProvider, selectedCountry: $selectedCountry)
+                GlobeRealityView(dataProvider: dataProvider, selectedCountry: $selectedCountry)
                     .edgesIgnoringSafeArea(.all)
             case .list:
                 CountriesListView(dataProvider: dataProvider, selectedCountry: $selectedCountry)
@@ -561,7 +555,7 @@ struct DashboardButton: View {
 
 @main
 struct InteractiveGlobeApp: App {
-    var body: some Scene {
+    var body: some SwiftUI.Scene {
         WindowGroup {
             ContentView()
         }
