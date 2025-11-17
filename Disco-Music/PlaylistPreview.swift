@@ -110,13 +110,7 @@ struct PlaylistPreviewView: View {
                             .cornerRadius(12)
                         }
                         .padding()
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.clear, .white.opacity(0.95), .white]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .background(.clear)
                     }
                 }
             }

@@ -28,7 +28,7 @@ class GlobeCoordinator: NSObject {
         setupGlobe()
         setupMarkers()
         setupGestures()
-//        startRotationAnimation()
+        startRotationAnimation()
     }
     
     private func setupScene() {
