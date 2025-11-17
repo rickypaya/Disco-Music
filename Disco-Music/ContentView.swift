@@ -119,6 +119,7 @@ struct ContentView: View {
     @State private var selectedTab: NavigationTab = .globe
     @State private var selectedCountry: Country?
     @State private var isARModeEnabled = false
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     
     var body: some View {
         ZStack {
@@ -192,6 +193,10 @@ struct ContentView: View {
         }
         .sheet(item: $selectedCountry) { country in
             CountryDetailView(country: country)
+        }
+        .fullScreenCover(isPresented: .constant(!hasSeenOnboarding)) {
+            OnboardingView(showOnboarding: .init(get: { !hasSeenOnboarding },
+                                                 set: { if !$0 { hasSeenOnboarding = true }}))
         }
     }
 }
