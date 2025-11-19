@@ -16,6 +16,7 @@ The goal of this application is to build an educational resource to not only und
 #### Data
 - [ ] Refine Country Data - Decide which countries to have on lists, add capital coordinates, descriptions, and genres
 - [ ] Playlist Database Setup - Supabase db for user profiles, songs, playlists, and likes.
+- [ ] Privacy Policy
 #### Application
 - [ ] Spotify API service
 - [ ] Spotify Auth in Onboarding
