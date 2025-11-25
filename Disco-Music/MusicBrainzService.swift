@@ -7,6 +7,7 @@ class MusicBrainzService: ObservableObject {
     @Published var artists: [Artist] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var isLoadingImages = false
     
     func searchArtists(country: String, genre: String, limit: Int = 10) async {
         await MainActor.run {
@@ -23,7 +24,8 @@ class MusicBrainzService: ObservableObject {
         components.queryItems = [
             URLQueryItem(name: "query", value: "country:\(countryCode) AND tag:\(genre)"),
             URLQueryItem(name: "fmt", value: "json"),
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "inc", value: "url-rels") // Include URL relationships to get Spotify links
         ]
         
         guard let url = components.url else {
@@ -41,8 +43,29 @@ class MusicBrainzService: ObservableObject {
             let (data, _) = try await URLSession.shared.data(for: request)
             let response = try JSONDecoder().decode(MusicBrainzResponse.self, from: data)
             
+            // Convert artists and fetch Spotify IDs
+            var artistsWithSpotify: [Artist] = []
+            
+            for mbArtist in response.artists {
+                var artist = mbArtist.toArtist()
+                
+                // Extract Spotify ID from relations
+                if let spotifyID = extractSpotifyID(from: mbArtist) {
+                    artist = Artist(
+                        id: artist.id,
+                        spotifyID: spotifyID,
+                        name: artist.name,
+                        displayInfo: artist.displayInfo,
+                        type: artist.type,
+                        country: artist.country,
+                    )
+                }
+                
+                artistsWithSpotify.append(artist)
+            }
+            
             await MainActor.run {
-                self.artists = response.artists.map { $0.toArtist() }
+                self.artists = artistsWithSpotify
                 self.isLoading = false
             }
         } catch {
@@ -51,6 +74,24 @@ class MusicBrainzService: ObservableObject {
                 self.isLoading = false
             }
         }
+    }
+    
+    private func extractSpotifyID(from artist: MusicBrainzArtist) -> String? {
+        guard let relations = artist.relations else { return nil }
+        
+        for relation in relations {
+            if relation.type == "streaming" || relation.type == "free streaming",
+               let urlString = relation.url?.resource,
+               urlString.contains("spotify.com/artist/") {
+                // Extract Spotify ID from URL like: https://open.spotify.com/artist/1234567890
+                if let url = URL(string: urlString),
+                   let artistId = url.pathComponents.last {
+                    return artistId
+                }
+            }
+        }
+        
+        return nil
     }
     
     private func getCountryCode(for country: String) -> String {
@@ -80,3 +121,4 @@ class MusicBrainzService: ObservableObject {
         return countryCodeMap[country] ?? "US"
     }
 }
+

@@ -8,6 +8,9 @@ struct PlaylistPreviewView: View {
     
     @Environment(\.dismiss) var dismiss
     @StateObject private var musicService = MusicBrainzService()
+    @StateObject private var authManager = SpotifyAuthManager.shared
+    @State private var showingLoginController = false
+    @State private var showingAuthAlert = false
     
     var body: some View {
         NavigationView {
@@ -83,29 +86,40 @@ struct PlaylistPreviewView: View {
                             
                             LazyVStack(spacing: 12) {
                                 ForEach(musicService.artists) { artist in
-                                    ArtistCard(artist: artist)
+                                    ArtistCard(
+                                        artist: artist,
+                                        imageUrl: nil
+                                    )
                                 }
                             }
                             .padding(.horizontal)
                         }
                     }
                     
-                    // Generate Button
+                    // Generate/Sign In Button
                     VStack {
-                        
                         Button(action: {
-                            // TODO: Generate playlist action
-                            print("Generate playlist for \(genre) from \(country.name)")
+                            if authManager.isAuthenticated {
+                                // Generate playlist
+                                generatePlaylist()
+                            } else {
+                                // Show auth alert
+                                showingAuthAlert = true
+                            }
                         }) {
                             HStack {
-                                Image(systemName: "play.circle.fill")
+                                Image(systemName: authManager.isAuthenticated ? "play.circle.fill" : "music.note")
                                     .font(.title3)
-                                Text("Generate Playlist")
+                                Text(authManager.isAuthenticated ? "Generate Playlist" : "Sign In to Create Playlist")
                                     .fontWeight(.semibold)
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
+                            .background(
+                                authManager.isAuthenticated ?
+                                    Color.blue :
+                                    Color(red: 30/255, green: 215/255, blue: 96/255)
+                            )
                             .foregroundColor(.white)
                             .cornerRadius(12)
                         }
@@ -122,10 +136,42 @@ struct PlaylistPreviewView: View {
                     }
                 }
             }
+            .background(
+                SpotifyLoginControllerWrapper(
+                    isPresented: $showingLoginController,
+                    onSuccess: {
+                        showingLoginController = false
+                    }
+                )
+            )
+            .alert("Sign In Required", isPresented: $showingAuthAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Sign In to Spotify") {
+                    showingLoginController = true
+                }
+            } message: {
+                Text("Connect your Spotify account to create and save playlists.")
+            }
             .task {
                 await musicService.searchArtists(country: country.name, genre: genre)
+                print(musicService.artists)
+                
+                // Fetch artist images from Spotify
+                if !musicService.artists.isEmpty {
+                    let artistIds = musicService.artists.compactMap { $0.spotifyID }
+                    print(artistIds)
+                    if !artistIds.isEmpty {
+                        //todo: fetch artists
+                    }
+                }
             }
         }
+    }
+    
+    private func generatePlaylist() {
+        // TODO: Implement playlist generation
+        print("Generate playlist for \(genre) from \(country.name)")
+        print("Access Token: \(authManager.accessToken ?? "none")")
     }
 }
 
@@ -133,32 +179,39 @@ struct PlaylistPreviewView: View {
 
 struct ArtistCard: View {
     let artist: Artist
+    let imageUrl: String? // Add this parameter
     
     var body: some View {
         HStack(spacing: 16) {
-            // Artist avatar placeholder
+            // Artist avatar with image or placeholder
             ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 60, height: 60)
-                
-                Image(systemName: "music.mic")
-                    .foregroundColor(.white)
-                    .font(.title2)
+                if let imageUrl = imageUrl, let url = URL(string: imageUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 60, height: 60)
+                                .clipShape(Circle())
+                        case .failure(_), .empty:
+                            placeholderCircle
+                        @unknown default:
+                            placeholderCircle
+                        }
+                    }
+                } else {
+                    placeholderCircle
+                }
             }
             
+            // Rest of the card remains the same
             VStack(alignment: .leading, spacing: 4) {
                 Text(artist.name)
                     .font(.headline)
                     .lineLimit(1)
                 
-                Text(artist.displayInfo)
+                Text(artist.displayInfo ?? "Artist")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -173,6 +226,23 @@ struct ArtistCard: View {
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(12)
+    }
+    
+    private var placeholderCircle: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 60, height: 60)
+            .overlay(
+                Image(systemName: "music.mic")
+                    .foregroundColor(.white)
+                    .font(.title2)
+            )
     }
 }
 

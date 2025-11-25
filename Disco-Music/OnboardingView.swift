@@ -325,6 +325,9 @@ struct ConceptsPage: View {
 }
 
 struct FeaturePage: View {
+    @StateObject private var authManager = SpotifyAuthManager.shared
+    @State private var showingLoginController = false
+    
     var onContinue: () -> Void
     var body: some View {
         VStack {
@@ -348,7 +351,7 @@ struct FeaturePage: View {
                 featureCard(
                     icon: "lightbulb.fill",
                     title: "Learn the story",
-                    description: "Get quick context about each region’s musical history and culture."
+                    description: "Get quick context about each region's musical history and culture."
                 )
                 
                 featureCard(
@@ -359,28 +362,63 @@ struct FeaturePage: View {
             }
             .padding(.horizontal, 24)
             Spacer()
-            Button(action: onContinue) {
-                Text("Let’s go")
-                    .font(.headline)
+            
+            // Updated button section with Spotify auth
+            VStack(spacing: 12) {
+                // Spotify Connect Button
+                Button(action: {
+                    showingLoginController = true
+                }) {
+                    HStack {
+                        Image(systemName: authManager.isAuthenticated ? "checkmark.circle.fill" : "music.note")
+                            .font(.headline)
+                        Text(authManager.isAuthenticated ? "Connected to Spotify" : "Connect Spotify")
+                            .font(.headline)
+                    }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 81/255, green: 175/255, blue: 134/255),
-                                Color(red: 68/255, green: 148/255, blue: 151/255)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        authManager.isAuthenticated ?
+                            Color.green :
+                            Color(red: 30/255, green: 215/255, blue: 96/255) // Spotify green
                     )
                     .cornerRadius(18)
                     .foregroundColor(.white)
+                }
+                .padding(.horizontal, 32)
+                .disabled(authManager.isAuthenticated)
+                .background(
+                    SpotifyLoginControllerWrapper(
+                        isPresented: $showingLoginController,
+                        onSuccess: {
+                            // Authentication successful
+                            showingLoginController = false
+                        }
+                    )
+                )
+                
+                // Continue Button
+                Button(action: onContinue) {
+                    Text(authManager.isAuthenticated ? "Let's Go!" : "Skip for now")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 81/255, green: 175/255, blue: 134/255),
+                                    Color(red: 68/255, green: 148/255, blue: 151/255)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(18)
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 32)
             }
-            .padding(.horizontal, 32)
             .padding(.bottom, 50)
-
-            
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(LinearGradient(colors: [
@@ -423,9 +461,7 @@ struct FeaturePage: View {
                 )
         )
     }
-    
 }
-
 #Preview {
     OnboardingView(showOnboarding: .constant(true))
 }

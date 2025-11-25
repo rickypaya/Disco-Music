@@ -6,13 +6,30 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9C656C052ED4CF8B00257010 /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = 9C656C042ED4CF8B00257010 /* SpotifyiOS */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		9CDB79862EC6EAED00EF91C4 /* Disco-Music.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Disco-Music.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C656C062ED5F2B700257010 /* Disco-Music.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Disco-Music.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9C656C1C2ED61C0E00257010 /* Exceptions for "Disco-Music" folder in "Disco-Music" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9CDB79852EC6EAED00EF91C4 /* Disco-Music */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9CDB79882EC6EAED00EF91C4 /* Disco-Music */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9C656C1C2ED61C0E00257010 /* Exceptions for "Disco-Music" folder in "Disco-Music" target */,
+			);
 			path = "Disco-Music";
 			sourceTree = "<group>";
 		};
@@ -23,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9C656C052ED4CF8B00257010 /* SpotifyiOS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,16 +51,8 @@
 			isa = PBXGroup;
 			children = (
 				9CDB79882EC6EAED00EF91C4 /* Disco-Music */,
-				9CDB79872EC6EAED00EF91C4 /* Products */,
+				9C656C062ED5F2B700257010 /* Disco-Music.app */,
 			);
-			sourceTree = "<group>";
-		};
-		9CDB79872EC6EAED00EF91C4 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				9CDB79862EC6EAED00EF91C4 /* Disco-Music.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,9 +75,10 @@
 			);
 			name = "Disco-Music";
 			packageProductDependencies = (
+				9C656C042ED4CF8B00257010 /* SpotifyiOS */,
 			);
 			productName = "Disco-Music";
-			productReference = 9CDB79862EC6EAED00EF91C4 /* Disco-Music.app */;
+			productReference = 9C656C062ED5F2B700257010 /* Disco-Music.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -94,8 +105,11 @@
 			);
 			mainGroup = 9CDB797D2EC6EAED00EF91C4;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9C656C032ED4CF8B00257010 /* XCRemoteSwiftPackageReference "ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 9CDB79872EC6EAED00EF91C4 /* Products */;
+			productRefGroup = 9CDB797D2EC6EAED00EF91C4;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -255,10 +269,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Disco-Music/Disco-Music.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8VNY625MD3;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Disco-Music",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_NSMainCameraUsageDescription = "We need camera access to show the globe in AR mode";
@@ -290,10 +309,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Disco-Music/Disco-Music.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8VNY625MD3;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Disco-Music",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_NSMainCameraUsageDescription = "We need camera access to show the globe in AR mode";
@@ -342,6 +366,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9C656C032ED4CF8B00257010 /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/spotify/ios-sdk";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9C656C042ED4CF8B00257010 /* SpotifyiOS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9C656C032ED4CF8B00257010 /* XCRemoteSwiftPackageReference "ios-sdk" */;
+			productName = SpotifyiOS;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9CDB797E2EC6EAED00EF91C4 /* Project object */;
 }

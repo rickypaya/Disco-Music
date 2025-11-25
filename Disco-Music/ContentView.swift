@@ -53,6 +53,10 @@ struct CountriesListView: View {
 // MARK: - About View
 
 struct AboutView: View {
+    @StateObject private var authManager = SpotifyAuthManager.shared
+    @State private var showingLogoutAlert = false
+    @State private var showingLoginController = false
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -80,6 +84,68 @@ struct AboutView: View {
                     
                     Divider()
                     
+                    // Spotify Account Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Spotify Account")
+                            .font(.headline)
+                        
+                        HStack {
+                            Image(systemName: authManager.isAuthenticated ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                .foregroundColor(authManager.isAuthenticated ? .green : .gray)
+                                .font(.title2)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(authManager.isAuthenticated ? "Connected" : "Not Connected")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                
+                                Text(authManager.isAuthenticated ? "You can create playlists" : "Connect to enable playlist creation")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        
+                        // Sign Out / Sign In Button
+                        if authManager.isAuthenticated {
+                            Button(action: {
+                                showingLogoutAlert = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    Text("Sign Out of Spotify")
+                                        .fontWeight(.medium)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .foregroundColor(.red)
+                                .cornerRadius(12)
+                            }
+                        } else {
+                            Button(action: {
+                                showingLoginController = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "music.note")
+                                    Text("Sign In to Spotify")
+                                        .fontWeight(.medium)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(red: 30/255, green: 215/255, blue: 96/255))
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                    
                     Text("Built with SwiftUI and RealityKit")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -89,6 +155,22 @@ struct AboutView: View {
                 .padding()
             }
             .navigationTitle("About")
+            .background(
+                SpotifyLoginControllerWrapper(
+                    isPresented: $showingLoginController,
+                    onSuccess: {
+                        showingLoginController = false
+                    }
+                )
+            )
+            .alert("Sign Out of Spotify?", isPresented: $showingLogoutAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Sign Out", role: .destructive) {
+                    authManager.logout()
+                }
+            } message: {
+                Text("You'll need to sign in again to create playlists and access Spotify features.")
+            }
         }
     }
 }
@@ -194,9 +276,11 @@ struct ContentView: View {
         .sheet(item: $selectedCountry) { country in
             CountryDetailView(country: country)
         }
-        .fullScreenCover(isPresented: .constant(!hasSeenOnboarding)) {
-            OnboardingView(showOnboarding: .init(get: { !hasSeenOnboarding },
-                                                 set: { if !$0 { hasSeenOnboarding = true }}))
+        .fullScreenCover(isPresented: .constant(!hasSeenOnboarding && SpotifyAuthManager.shared.isAuthenticated)) {
+            OnboardingView(showOnboarding: .init(
+                get: { !hasSeenOnboarding },
+                set: { if !$0 { hasSeenOnboarding = true } }
+            ))                    
         }
     }
 }
@@ -217,17 +301,6 @@ struct DashboardButton: View {
             }
             .foregroundColor(isSelected ? .blue : .primary)
             .frame(width: 80, height: 60)
-        }
-    }
-}
-
-// MARK: - App Entry Point
-
-@main
-struct InteractiveGlobeApp: App {
-    var body: some SwiftUI.Scene {
-        WindowGroup {
-            ContentView()
         }
     }
 }

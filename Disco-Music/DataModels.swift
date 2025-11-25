@@ -29,28 +29,12 @@ struct Country: Identifiable, Codable {
     }
 }
 
-// MARK: - Artist Model
-
-struct Artist: Identifiable, Codable {
-    let id: String
-    let name: String
-    let type: String?
-    let country: String?
-    let disambiguation: String?
-    
-    var displayInfo: String {
-        if let disambiguation = disambiguation, !disambiguation.isEmpty {
-            return disambiguation
-        }
-        return type ?? "Artist"
-    }
-}
-
 // MARK: - MusicBrainz API Response Models
 
 struct MusicBrainzResponse: Codable {
     let artists: [MusicBrainzArtist]
 }
+
 
 struct MusicBrainzArtist: Codable {
     let id: String
@@ -58,18 +42,58 @@ struct MusicBrainzArtist: Codable {
     let type: String?
     let country: String?
     let disambiguation: String?
+    let lifeSpan: LifeSpan?
+    let relations: [Relation]?
     
     enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case type
-        case country
-        case disambiguation
+        case id, name, type, country, disambiguation, relations
+        case lifeSpan = "life-span"
     }
     
     func toArtist() -> Artist {
-        Artist(id: id, name: name, type: type, country: country, disambiguation: disambiguation)
+        var displayInfo = ""
+        
+        if let type = type {
+            displayInfo = type.capitalized
+        }
+        
+        if let country = country {
+            if !displayInfo.isEmpty {
+                displayInfo += " • "
+            }
+            displayInfo += country
+        }
+        
+        if let disambiguation = disambiguation, !disambiguation.isEmpty {
+            if !displayInfo.isEmpty {
+                displayInfo += " • "
+            }
+            displayInfo += disambiguation
+        }
+        
+        return Artist(
+            id: id,
+            spotifyID: nil, // Will be populated separately
+            name: name,
+            displayInfo: displayInfo.isEmpty ? "Artist" : displayInfo,
+            type: type,
+            country: country,
+        )
     }
+}
+
+struct LifeSpan: Codable {
+    let begin: String?
+    let end: String?
+}
+
+struct Relation: Codable {
+    let type: String
+    let url: RelationURL?
+}
+
+struct RelationURL: Codable {
+    let resource: String
 }
 
 // MARK: - Sample Data Provider
@@ -118,3 +142,119 @@ class CountriesDataProvider: NSObject, ObservableObject {
 }
 
 
+//MARK: - Spotify Data Models
+
+struct SpotifyArtistsResponse: Codable {
+    let artists: [SpotifyArtist]
+}
+
+struct SpotifyArtist: Codable {
+    let id: String
+    let name: String
+    let images: [SpotifyImage]
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, images
+    }
+}
+
+
+struct TokenResponse: Codable {
+    let accessToken: String
+    let tokenType: String
+    let expiresIn: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case tokenType = "token_type"
+        case expiresIn = "expires_in"
+    }
+}
+
+struct SearchResponse: Codable {
+    let tracks: TracksObject
+}
+
+struct TracksObject: Codable {
+    let tracks: [Track]
+}
+
+struct Track: Codable {
+    let id: String
+    let name: String
+    let uri: String
+    let artists: [Artist]
+    let album: Album
+}
+
+struct Artist: Codable, Identifiable {
+    let id: String
+    let spotifyID: String?
+    let name: String
+    let displayInfo: String?
+    let type: String?
+    let country: String?
+    
+    static func == (lhs: Artist, rhs: Artist) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    
+}
+
+struct Album: Codable {
+    let id: String
+    let name: String
+    let images: [SpotifyImage]
+}
+
+struct SpotifyImage: Codable {
+    let url: String
+    let height: Int?
+    let width: Int?
+}
+
+struct ArtistSearchResponse: Codable {
+    let artists: ArtistsObject
+}
+
+struct ArtistsObject: Codable {
+    let items: [ArtistDetail]
+}
+
+struct ArtistDetail: Codable {
+    let id: String
+    let name: String
+    let images: [SpotifyImage]
+}
+
+struct Playlist: Codable {
+    let id: String
+    let name: String
+    let description: String?
+    let externalUrls: [String: String]?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, description
+        case externalUrls = "external_urls"
+    }
+}
+
+struct UserProfile: Codable {
+    let id: String
+    let displayName: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case displayName = "display_name"
+    }
+}
+
+// MARK: - Errors
+
+enum SpotifyError: Error {
+    case notAuthenticated
+    case noData
+    case requestFailed
+    case noAccessToken
+}
