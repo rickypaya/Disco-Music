@@ -18,9 +18,13 @@ class SpotifyAuthManager: NSObject, ObservableObject {
     
     private var sessionManager: SPTSessionManager?
     
-    // Replace these with your actual Spotify app credentials
-    private let spotifyClientID = "88af7de34a874416bcfe2dd098bcb9b4"
-    private let spotifyRedirectURL = URL(string: "disco://callback")!
+    private var spotifyClientID: String {
+        SpotifyConfig.clientID
+    }
+    
+    private var spotifyRedirectURL: URL {
+        SpotifyConfig.redirectURL
+    }
     
     override private init() {
         super.init()
@@ -74,7 +78,6 @@ class SpotifyAuthManager: NSObject, ObservableObject {
             self.isAuthenticated = true
         }
         
-        print(self.accessToken)
     }
     
     func logout() {

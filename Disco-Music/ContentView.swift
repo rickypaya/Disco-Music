@@ -201,6 +201,8 @@ struct ContentView: View {
     @State private var selectedTab: NavigationTab = .globe
     @State private var selectedCountry: Country?
     @State private var isARModeEnabled = false
+    @StateObject private var playerManager = SpotifyPlayerManager.shared
+    @StateObject private var authManager = SpotifyAuthManager.shared
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     
     var body: some View {
@@ -253,6 +255,12 @@ struct ContentView: View {
             // Navigation Dashboard
             VStack {
                 Spacer()
+                if playerManager.isConnected {
+                    SpotifyMiniPlayer()
+                        .padding(.horizontal)
+                        .padding(.bottom, 4)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
                 
                 HStack(spacing: 30) {
                     DashboardButton(icon: "globe", title: "Globe", isSelected: selectedTab == .globe) {
@@ -281,6 +289,18 @@ struct ContentView: View {
                 get: { !hasSeenOnboarding },
                 set: { if !$0 { hasSeenOnboarding = true } }
             ))                    
+        }
+        .onAppear {
+            if authManager.isAuthenticated && !playerManager.isConnected {
+                playerManager.connect()
+            }
+        }
+        .onChange(of: authManager.isAuthenticated) { oldValue, newValue in
+            if newValue {
+                playerManager.connect()
+            } else {
+                playerManager.disconnect()
+            }
         }
     }
 }

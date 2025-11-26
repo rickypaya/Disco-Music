@@ -11,7 +11,7 @@ import Security
 class KeychainHelper {
     static let shared = KeychainHelper()
     
-    private let service = "com.disco-music.spotify"
+    private let service = "com.spotify.music"
     private let accessTokenKey = "spotifyAccessToken"
     
     private init() {}

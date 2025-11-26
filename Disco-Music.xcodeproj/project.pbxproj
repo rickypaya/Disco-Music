@@ -15,7 +15,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9C656C1C2ED61C0E00257010 /* Exceptions for "Disco-Music" folder in "Disco-Music" target */ = {
+		9C656C2D2ED7955600257010 /* Exceptions for "Disco-Music" folder in "Disco-Music" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -28,7 +28,7 @@
 		9CDB79882EC6EAED00EF91C4 /* Disco-Music */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				9C656C1C2ED61C0E00257010 /* Exceptions for "Disco-Music" folder in "Disco-Music" target */,
+				9C656C2D2ED7955600257010 /* Exceptions for "Disco-Music" folder in "Disco-Music" target */,
 			);
 			path = "Disco-Music";
 			sourceTree = "<group>";
@@ -192,6 +192,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_NSMainCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -252,6 +254,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_NSMainCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -279,6 +283,7 @@
 					"$(PROJECT_DIR)/Disco-Music",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Disco-Music/Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_NSMainCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -292,7 +297,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.IYA.DiscoTeam.Disco-Music";
+				PRODUCT_BUNDLE_IDENTIFIER = com.IYA.Disco;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -319,6 +324,7 @@
 					"$(PROJECT_DIR)/Disco-Music",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Disco-Music/Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_NSMainCameraUsageDescription = "We need camera access to show the globe in AR mode";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -332,7 +338,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.IYA.DiscoTeam.Disco-Music";
+				PRODUCT_BUNDLE_IDENTIFIER = com.IYA.Disco;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
