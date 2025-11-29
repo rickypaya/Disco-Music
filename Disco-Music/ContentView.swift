@@ -321,6 +321,7 @@ struct DashboardButton: View {
             }
             .foregroundColor(isSelected ? .blue : .primary)
             .frame(width: 80, height: 60)
+            
         }
     }
 }

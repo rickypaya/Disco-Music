@@ -5,126 +5,160 @@ import SwiftUI
 struct PlaylistPreviewView: View {
     let country: Country
     let genre: String
+    //let detailViewColor = Color(red: 0.047, green: 0.490, blue: 0.627)
+    private let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    private let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+
     
     @Environment(\.dismiss) var dismiss
     @StateObject private var musicService = MusicBrainzService()
     @StateObject private var authManager = SpotifyAuthManager.shared
     @State private var showingLoginController = false
     @State private var showingAuthAlert = false
+    @State private var isGenerating = false
+    @State private var generationError: String?
+    
+    
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 8) {
-                    Text(country.flagEmoji)
-                        .font(.system(size: 60))
-                    
-                    Text(genre)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("from \(country.name)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color(.systemGray6))
-                
-                // Artists List
-                if musicService.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .scaleEffect(1.5)
-                    Text("Discovering artists...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top)
-                    Spacer()
-                } else if let errorMessage = musicService.errorMessage {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 40))
-                            .foregroundColor(.orange)
-                        Text(errorMessage)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+            ZStack{
+                LinearGradient(colors: [backgroundBlue, backgroundBlueDark], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                VStack(spacing: 0) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text(country.flagEmoji)
+                            .font(.system(size: 60))
                         
-                        Button("Try Again") {
-                            Task {
-                                await musicService.searchArtists(country: country.name, genre: genre)
-                            }
-                        }
-                        .buttonStyle(.bordered)
+                        Text(genre)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        Text("from \(country.name)")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                            .opacity(0.7)
                     }
-                    Spacer()
-                } else if musicService.artists.isEmpty {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        Image(systemName: "music.note.slash")
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray)
-                        Text("No artists found")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                        Text("Try searching for a different genre")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    //.background(Color(.systemGray6))
+                    //.background(LinearGradient(colors: [detailViewColor, .black], startPoint: .top, endPoint: .bottom))
+                    
+                    // Artists List
+                    if musicService.isLoading {
+                        Spacer()
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Discovering artists...")
                             .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            Text("Featured Artists")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
+                            .foregroundColor(.white)
+                            .padding(.top)
+                        Spacer()
+                    } else if let errorMessage = musicService.errorMessage {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40))
+                                .foregroundColor(.orange)
+                            Text(errorMessage)
+                                .font(.body)
+                                .foregroundColor(.white)
+                                .opacity(0.7)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                             
-                            LazyVStack(spacing: 12) {
-                                ForEach(musicService.artists) { artist in
-                                    ArtistCard(
-                                        artist: artist,
-                                        imageUrl: nil
-                                    )
+                            Button("Try Again") {
+                                Task {
+                                    await musicService.searchArtists(country: country.name, genre: genre)
                                 }
                             }
-                            .padding(.horizontal)
+                            .buttonStyle(.bordered)
+                            
                         }
-                    }
-                    
-                    // Generate/Sign In Button
-                    VStack {
-                        Button(action: {
-                            if authManager.isAuthenticated {
-                                // Generate playlist
-                                generatePlaylist()
-                            } else {
-                                // Show auth alert
-                                showingAuthAlert = true
+                        Spacer()
+                    } else if musicService.artists.isEmpty {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            //Image(systemName: "music.note.slash")
+                            Image(systemName: "music.note")
+                                .font(.system(size: 40))
+                                .foregroundColor(.white)
+                            Text("No artists found")
+                                .font(.body)
+                                .foregroundColor(.white)
+                                .opacity(0.7)
+                            Text("Try searching for a different genre")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .opacity(0.7)
+                        }
+                        Spacer()
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                Text("Featured Artists")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding()
+                                    .foregroundColor(.white)
+                                
+                                LazyVStack(spacing: 12) {
+                                    ForEach(musicService.artists) { artist in
+                                        ArtistCard(
+                                            artist: artist,
+                                            imageUrl: nil
+                                        )
+                                    }
+                                }
+                                .padding(.horizontal)
                             }
-                        }) {
-                            HStack {
-                                Image(systemName: authManager.isAuthenticated ? "play.circle.fill" : "music.note")
-                                    .font(.title3)
-                                Text(authManager.isAuthenticated ? "Generate Playlist" : "Sign In to Create Playlist")
-                                    .fontWeight(.semibold)
+                        }
+                        // Generate / Sign In Button
+                        VStack {
+                            Button(action: {
+                                if authManager.isAuthenticated {
+                                    if !isGenerating {
+                                        generatePlaylist()
+                                    }
+                                } else {
+                                    showingAuthAlert = true
+                                }
+                            }) {
+                                HStack {
+                                    if isGenerating {
+                                        ProgressView()
+                                            .tint(.white)
+                                        Text("Generating...")
+                                            .fontWeight(.semibold)
+                                    } else {
+                                        Image(systemName: authManager.isAuthenticated ? "play.circle.fill" : "music.note")
+                                            .font(.title3)
+                                        Text(authManager.isAuthenticated ? "Generate Playlist" : "Sign In to Create Playlist")
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    authManager.isAuthenticated ?
+                                   backgroundBlue :
+                                        Color(backgroundBlueDark)
+                                )
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
                             }
-                            .frame(maxWidth: .infinity)
+                            .disabled(isGenerating)
                             .padding()
-                            .background(
-                                authManager.isAuthenticated ?
-                                    Color.blue :
-                                    Color(red: 30/255, green: 215/255, blue: 96/255)
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .background(.clear)
+                            
+                            if let generationError {
+                                Text(generationError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
                         }
-                        .padding()
-                        .background(.clear)
+                        
                     }
                 }
             }
@@ -168,10 +202,37 @@ struct PlaylistPreviewView: View {
         }
     }
     
+    
+    
     private func generatePlaylist() {
-        // TODO: Implement playlist generation
-        print("Generate playlist for \(genre) from \(country.name)")
-        print("Access Token: \(authManager.accessToken ?? "none")")
+        let artistsList = musicService.artists   // allow name-based search
+        
+        guard !artistsList.isEmpty else {
+            generationError = "No artists found."
+            return
+        }
+        
+        isGenerating = true
+        generationError = nil
+        
+        Task {
+            do {
+                let playlist = try await SpotifyWebAPI.shared.generatePlaylist(
+                    countryCode: "US",
+                    countryName: country.name,
+                    genre: genre,
+                    artists: artistsList,     // <-- use full list
+                    tracksPerArtist: 2
+                )
+                
+                print("Created playlist:", playlist.name, playlist.id)
+            } catch {
+                print("Playlist generation failed:", error)
+                generationError = "Failed to generate playlist."
+            }
+            
+            isGenerating = false
+        }
     }
 }
 
