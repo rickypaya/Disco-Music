@@ -9,9 +9,9 @@ struct CountriesListView: View {
     @Binding var selectedCountry: Country?
     @State private var searchText = ""
     
-    let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
-    let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
-    let backgroundOpacity = Color.white.opacity(0.1)
+    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    //let backgroundOpacity = Color.white.opacity(0.1)
     
     var filteredCountries: [Country] {
         if searchText.isEmpty {
@@ -32,15 +32,15 @@ struct CountriesListView: View {
                     HStack {
                         Text(country.flagEmoji)
                             .font(.largeTitle)
-                            .foregroundColor(.white)
+                            .foregroundColor(.appTextLight)
                         
                         VStack(alignment: .leading) {
                             Text(country.name)
                                 .font(.headline)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                             Text(country.capital)
                                 .font(.subheadline)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                                 .opacity(0.7)
                         }
                         
@@ -50,10 +50,12 @@ struct CountriesListView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                .listRowBackground(backgroundOpacity)
+                //.listRowBackground(0.1)
+                .listRowBackground(Color.appBackgroundDark.opacity(0.1))
+
             }
             .scrollContentBackground(.hidden)
-            .background(LinearGradient(colors: [backgroundBlue, backgroundBlueDark], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            .background(LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             )
             .searchable(text: $searchText, prompt: "Search countries or capitals")
             .navigationTitle("Countries")
@@ -69,119 +71,142 @@ struct AboutView: View {
     @State private var showingLogoutAlert = false
     @State private var showingLoginController = false
     
+    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Interactive Globe")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text("Explore the world through an interactive 3D globe powered by RealityKit. Tap on capital cities to learn more about different countries.")
-                        .font(.body)
-                    
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Features")
-                            .font(.headline)
+        ZStack{
+            LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            
+            NavigationView {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Interactive Globe")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.appTextLight)
                         
-                        FeatureRow(icon: "globe", text: "Interactive 3D globe with RealityKit rendering")
-                        FeatureRow(icon: "hand.draw", text: "Drag to rotate, pinch to zoom")
-                        FeatureRow(icon: "mappin.circle", text: "Tap capital cities for detailed information")
-                        FeatureRow(icon: "list.bullet", text: "Browse all countries in list view")
-                        FeatureRow(icon: "camera", text: "Toggle AR mode to view globe in real world")
-                        FeatureRow(icon: "moon.stars", text: "Enjoy starry night sky in non-AR mode")
-                    }
-                    
-                    Divider()
-                    
-                    // Spotify Account Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Spotify Account")
-                            .font(.headline)
+                        Text("Explore the world through an interactive 3D globe powered by RealityKit. Tap on capital cities to learn more about different countries.")
+                            .font(.body)
+                            .foregroundColor(.appTextLight)
                         
-                        HStack {
-                            Image(systemName: authManager.isAuthenticated ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundColor(authManager.isAuthenticated ? .green : .gray)
-                                .font(.title2)
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Features")
+                                .font(.headline)
                             
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(authManager.isAuthenticated ? "Connected" : "Not Connected")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
+                            FeatureRow(icon: "globe", text: "Interactive 3D globe with RealityKit rendering")
+                            FeatureRow(icon: "hand.draw", text: "Drag to rotate, pinch to zoom")
+                            FeatureRow(icon: "mappin.circle", text: "Tap capital cities for detailed information")
+                            FeatureRow(icon: "list.bullet", text: "Browse all countries in list view")
+                            FeatureRow(icon: "camera", text: "Toggle AR mode to view globe in real world")
+                            FeatureRow(icon: "moon.stars", text: "Enjoy starry night sky in non-AR mode")
+                        }.foregroundColor(.appTextLight)
+                        
+                        Divider()
+                        
+                        // Spotify Account Section
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Spotify Account")
+                                .font(.headline)
+                                .foregroundColor(.appTextLight)
+                            
+                            HStack {
+                                Image(systemName: authManager.isAuthenticated ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .foregroundColor(authManager.isAuthenticated ? .green : .gray)
+                                    .font(.title2)
                                 
-                                Text(authManager.isAuthenticated ? "You can create playlists" : "Connect to enable playlist creation")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(authManager.isAuthenticated ? "Connected" : "Not Connected")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                    
+                                    Text(authManager.isAuthenticated ? "You can create playlists" : "Connect to enable playlist creation")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
                             }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
                             
-                            Spacer()
+                            // Sign Out / Sign In Button
+                            if authManager.isAuthenticated {
+                                Button(action: {
+                                    showingLogoutAlert = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                                        Text("Sign Out of Spotify")
+                                            .fontWeight(.medium)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.red.opacity(0.1))
+                                    .foregroundColor(.red)
+                                    .cornerRadius(12)
+                                }
+                            } else {
+                                Button(action: {
+                                    showingLoginController = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "music.note")
+                                        Text("Sign In to Spotify")
+                                            .fontWeight(.medium)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color(red: 30/255, green: 215/255, blue: 96/255))
+                                    .foregroundColor(.appTextLight)
+                                    .cornerRadius(12)
+                                }
+                            }
                         }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
                         
-                        // Sign Out / Sign In Button
-                        if authManager.isAuthenticated {
-                            Button(action: {
-                                showingLogoutAlert = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    Text("Sign Out of Spotify")
-                                        .fontWeight(.medium)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.red.opacity(0.1))
-                                .foregroundColor(.red)
-                                .cornerRadius(12)
-                            }
-                        } else {
-                            Button(action: {
-                                showingLoginController = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "music.note")
-                                    Text("Sign In to Spotify")
-                                        .fontWeight(.medium)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(red: 30/255, green: 215/255, blue: 96/255))
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
-                            }
-                        }
+                        Divider()
+                        
+                        Text("Built with SwiftUI and RealityKit")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
                     }
-                    
-                    Divider()
-                    
-                    Text("Built with SwiftUI and RealityKit")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
+                    .padding()
                 }
-                .padding()
-            }
-            .navigationTitle("About")
-            .background(
-                SpotifyLoginControllerWrapper(
-                    isPresented: $showingLoginController,
-                    onSuccess: {
-                        showingLoginController = false
+                .navigationTitle("About")
+                .toolbarBackground(.clear, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarColorScheme(.light, for: .navigationBar)
+
+                .background(
+                    ZStack {
+                        LinearGradient(
+                            colors: [.appBackgroundLight, .appBackgroundDark],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        SpotifyLoginControllerWrapper(
+                            isPresented: $showingLoginController,
+                            onSuccess: {
+                                showingLoginController = false
+                            }
+                        )
                     }
+                        .ignoresSafeArea()
                 )
-            )
-            .alert("Sign Out of Spotify?", isPresented: $showingLogoutAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Sign Out", role: .destructive) {
-                    authManager.logout()
+                .alert("Sign Out of Spotify?", isPresented: $showingLogoutAlert) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Sign Out", role: .destructive) {
+                        authManager.logout()
+                    }
+                } message: {
+                    Text("You'll need to sign in again to create playlists and access Spotify features.")
                 }
-            } message: {
-                Text("You'll need to sign in again to create playlists and access Spotify features.")
             }
         }
     }
@@ -216,6 +241,10 @@ struct ContentView: View {
     @StateObject private var playerManager = SpotifyPlayerManager.shared
     @StateObject private var authManager = SpotifyAuthManager.shared
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    
+    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+
     
     var body: some View {
         ZStack {
@@ -332,7 +361,7 @@ struct DashboardButton: View {
                     .font(.caption)
             }
             .foregroundColor(isSelected ? .blue : .primary)
-            .frame(width: 80, height: 60)
+            .frame(width: 80, height: 45)
             
         }
     }

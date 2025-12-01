@@ -8,15 +8,15 @@ struct CountryDetailView: View {
     @State private var selectedGenre: String?
     @State private var showPlaylistPreview = false
     
-    let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
-    let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
 
 
     
     var body: some View {
         NavigationView {
             ZStack {
-                LinearGradient(colors: [backgroundBlue, backgroundBlueDark], startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 5) {
@@ -29,11 +29,11 @@ struct CountryDetailView: View {
                                 Text(country.name)
                                     .font(.title)
                                     .fontWeight(.bold)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.appTextLight)
 
                                 Text(country.region)
                                     .font(.subheadline)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.appTextLight)
                                     .opacity(0.7)
 
                             }
@@ -63,12 +63,12 @@ struct CountryDetailView: View {
                             Text("Originating Genres")
                                 .font(.headline)
                                 .padding(.horizontal)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
 
                             
                             Text("Tap a genre to discover artists and create a playlist")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                                 .opacity(0.7)
                                 .padding(.horizontal)
                             
@@ -121,11 +121,11 @@ struct DetailRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.white)
+                .foregroundColor(.appTextLight)
                 .opacity(0.7)
             Text(value)
                 .font(.body)
-                .foregroundColor(.white)
+                .foregroundColor(.appTextLight)
         }
         .padding(.horizontal)
         .padding(.vertical, 4)
@@ -144,13 +144,13 @@ struct GenreButton: View {
         Button(action: action) {
             HStack {
                 Image(systemName: "music.note.list")
-                    .foregroundColor(.white)
+                    .foregroundColor(.appTextLight)
                     .font(.title3)
                 
                 Text(genre)
                     .font(.body)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundColor(.appTextLight)
 
                 Spacer()
                 

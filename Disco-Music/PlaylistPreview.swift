@@ -6,9 +6,9 @@ struct PlaylistPreviewView: View {
     let country: Country
     let genre: String
     
-    let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
-    let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
-    let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
+    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    //let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
 
     @Environment(\.dismiss) var dismiss
     @StateObject private var musicService = MusicBrainzService()
@@ -21,7 +21,7 @@ struct PlaylistPreviewView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                LinearGradient(colors: [backgroundBlue, backgroundBlueDark],
+                LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark],
                                startPoint: .top,
                                endPoint: .bottom)
                 .ignoresSafeArea()
@@ -35,11 +35,11 @@ struct PlaylistPreviewView: View {
                         Text(genre)
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(.appTextLight)
                         
                         Text("from \(country.name)")
                             .font(.subheadline)
-                            .foregroundColor(.white)
+                            .foregroundColor(.appTextLight)
                             .opacity(0.7)
                     }
                     .padding()
@@ -52,7 +52,7 @@ struct PlaylistPreviewView: View {
                             .scaleEffect(1.5)
                         Text("Discovering artists...")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(.appTextLight)
                             .padding(.top)
                         Spacer()
                         
@@ -64,7 +64,7 @@ struct PlaylistPreviewView: View {
                                 .foregroundColor(.orange)
                             Text(errorMessage)
                                 .font(.body)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                                 .opacity(0.7)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
@@ -83,14 +83,14 @@ struct PlaylistPreviewView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "music.note")
                                 .font(.system(size: 40))
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                             Text("No artists found")
                                 .font(.body)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                                 .opacity(0.7)
                             Text("Try searching for a different genre")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                                 .opacity(0.7)
                         }
                         Spacer()
@@ -102,7 +102,7 @@ struct PlaylistPreviewView: View {
                                     .font(.headline)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.appTextLight)
                                 
                                 LazyVStack(spacing: 12) {
                                     ForEach(musicService.artists) { artist in
@@ -143,9 +143,9 @@ struct PlaylistPreviewView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(
-                                    authManager.isAuthenticated ? buttonCyan : Color.gray.opacity(0.4)
+                                    authManager.isAuthenticated ? .appButton : Color.gray.opacity(0.4)
                                 )
-                                .foregroundColor(.white)
+                                .foregroundColor(.appTextLight)
                                 .cornerRadius(12)
                             }
                             .disabled(isGenerating)
@@ -289,11 +289,11 @@ struct ArtistCard: View {
                 Text(artist.name)
                     .font(.headline)
                     .lineLimit(1)
-                    .foregroundColor(.white)
+                    .foregroundColor(.appTextLight)
                 
                 Text(artist.displayInfo ?? "Artist")
                     .font(.caption)
-                    .foregroundColor(.white)
+                    .foregroundColor(.appTextLight)
                     .opacity(0.7)
                     //.foregroundColor(.secondary)
                     .lineLimit(1)
@@ -325,7 +325,7 @@ struct ArtistCard: View {
             .frame(width: 60, height: 60)
             .overlay(
                 Image(systemName: "music.mic")
-                    .foregroundColor(.white)
+                    .foregroundColor(.appTextLight)
                     .font(.title2)
             )
     }
