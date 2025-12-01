@@ -8,8 +8,8 @@ struct CountryDetailView: View {
     @State private var selectedGenre: String?
     @State private var showPlaylistPreview = false
     
-    private let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
-    private let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
 
 
     
@@ -137,7 +137,7 @@ struct DetailRow: View {
 struct GenreButton: View {
     let genre: String
     let action: () -> Void
-    let buttonColor = Color(red: 0.0, green: 0.671, blue: 0.725)
+    let buttonCyan = Color(red: 0.0, green: 0.671, blue: 0.725)
 
     
     var body: some View {
@@ -159,7 +159,7 @@ struct GenreButton: View {
                     .font(.caption)
             }
             .padding()
-            .background(Color(buttonColor))
+            .background(Color(buttonCyan))
             .cornerRadius(12)
         }
         .buttonStyle(PlainButtonStyle())

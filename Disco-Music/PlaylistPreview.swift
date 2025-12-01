@@ -6,8 +6,9 @@ struct PlaylistPreviewView: View {
     let country: Country
     let genre: String
     //let detailViewColor = Color(red: 0.047, green: 0.490, blue: 0.627)
-    private let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
-    private let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
 
     
     @Environment(\.dismiss) var dismiss
@@ -34,6 +35,7 @@ struct PlaylistPreviewView: View {
                         Text(genre)
                             .font(.title2)
                             .fontWeight(.bold)
+                            .foregroundColor(.white)
                         
                         Text("from \(country.name)")
                             .font(.subheadline)
@@ -74,7 +76,6 @@ struct PlaylistPreviewView: View {
                                 }
                             }
                             .buttonStyle(.bordered)
-                            
                         }
                         Spacer()
                     } else if musicService.artists.isEmpty {
@@ -108,6 +109,7 @@ struct PlaylistPreviewView: View {
                                         ArtistCard(
                                             artist: artist,
                                             imageUrl: nil
+                                            //TODO: add image url from spotify api
                                         )
                                     }
                                 }
@@ -134,17 +136,17 @@ struct PlaylistPreviewView: View {
                                     } else {
                                         Image(systemName: authManager.isAuthenticated ? "play.circle.fill" : "music.note")
                                             .font(.title3)
+                                            //.foregroundColor(.white)
                                         Text(authManager.isAuthenticated ? "Generate Playlist" : "Sign In to Create Playlist")
                                             .fontWeight(.semibold)
+                                            //.foregroundColor(.white)
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(
-                                    authManager.isAuthenticated ?
-                                   backgroundBlue :
-                                        Color(backgroundBlueDark)
-                                )
+                                    authManager.isAuthenticated ? buttonCyan : Color.gray.opacity(0.4)
+                                    )
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                             }
@@ -241,6 +243,8 @@ struct PlaylistPreviewView: View {
 struct ArtistCard: View {
     let artist: Artist
     let imageUrl: String? // Add this parameter
+    let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
+
     
     var body: some View {
         HStack(spacing: 16) {
@@ -271,10 +275,13 @@ struct ArtistCard: View {
                 Text(artist.name)
                     .font(.headline)
                     .lineLimit(1)
+                    .foregroundColor(.white)
                 
                 Text(artist.displayInfo ?? "Artist")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white)
+                    .opacity(0.7)
+                    //.foregroundColor(.secondary)
                     .lineLimit(1)
             }
             
@@ -283,12 +290,15 @@ struct ArtistCard: View {
             Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
                 .font(.caption)
+            
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(
+            Color(buttonCyan))
         .cornerRadius(12)
     }
     
+    //TODO: REPLACE holders with images from spotify
     private var placeholderCircle: some View {
         Circle()
             .fill(

@@ -9,6 +9,10 @@ struct CountriesListView: View {
     @Binding var selectedCountry: Country?
     @State private var searchText = ""
     
+    let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+    let backgroundOpacity = Color.white.opacity(0.1)
+    
     var filteredCountries: [Country] {
         if searchText.isEmpty {
             return dataProvider.countries
@@ -28,13 +32,16 @@ struct CountriesListView: View {
                     HStack {
                         Text(country.flagEmoji)
                             .font(.largeTitle)
+                            .foregroundColor(.white)
                         
                         VStack(alignment: .leading) {
                             Text(country.name)
                                 .font(.headline)
+                                .foregroundColor(.white)
                             Text(country.capital)
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
+                                .opacity(0.7)
                         }
                         
                         Spacer()
@@ -43,9 +50,14 @@ struct CountriesListView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                .listRowBackground(backgroundOpacity)
             }
+            .scrollContentBackground(.hidden)
+            .background(LinearGradient(colors: [backgroundBlue, backgroundBlueDark], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            )
             .searchable(text: $searchText, prompt: "Search countries or capitals")
             .navigationTitle("Countries")
+            
         }
     }
 }
