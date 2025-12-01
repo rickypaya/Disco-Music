@@ -5,12 +5,11 @@ import SwiftUI
 struct PlaylistPreviewView: View {
     let country: Country
     let genre: String
-    //let detailViewColor = Color(red: 0.047, green: 0.490, blue: 0.627)
+    
     let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
     let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
     let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
 
-    
     @Environment(\.dismiss) var dismiss
     @StateObject private var musicService = MusicBrainzService()
     @StateObject private var authManager = SpotifyAuthManager.shared
@@ -19,13 +18,14 @@ struct PlaylistPreviewView: View {
     @State private var isGenerating = false
     @State private var generationError: String?
     
-    
-    
     var body: some View {
         NavigationView {
-            ZStack{
-                LinearGradient(colors: [backgroundBlue, backgroundBlueDark], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
+            ZStack {
+                LinearGradient(colors: [backgroundBlue, backgroundBlueDark],
+                               startPoint: .top,
+                               endPoint: .bottom)
+                .ignoresSafeArea()
+                
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
@@ -44,10 +44,8 @@ struct PlaylistPreviewView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity)
-                    //.background(Color(.systemGray6))
-                    //.background(LinearGradient(colors: [detailViewColor, .black], startPoint: .top, endPoint: .bottom))
                     
-                    // Artists List
+                    // Artists List / States
                     if musicService.isLoading {
                         Spacer()
                         ProgressView()
@@ -57,6 +55,7 @@ struct PlaylistPreviewView: View {
                             .foregroundColor(.white)
                             .padding(.top)
                         Spacer()
+                        
                     } else if let errorMessage = musicService.errorMessage {
                         Spacer()
                         VStack(spacing: 12) {
@@ -78,10 +77,10 @@ struct PlaylistPreviewView: View {
                             .buttonStyle(.bordered)
                         }
                         Spacer()
+                        
                     } else if musicService.artists.isEmpty {
                         Spacer()
                         VStack(spacing: 12) {
-                            //Image(systemName: "music.note.slash")
                             Image(systemName: "music.note")
                                 .font(.system(size: 40))
                                 .foregroundColor(.white)
@@ -95,6 +94,7 @@ struct PlaylistPreviewView: View {
                                 .opacity(0.7)
                         }
                         Spacer()
+                        
                     } else {
                         ScrollView {
                             VStack(spacing: 0) {
@@ -108,14 +108,14 @@ struct PlaylistPreviewView: View {
                                     ForEach(musicService.artists) { artist in
                                         ArtistCard(
                                             artist: artist,
-                                            imageUrl: nil
-                                            //TODO: add image url from spotify api
+                                            imageUrl: nil // TODO: add image URL from Spotify API
                                         )
                                     }
                                 }
                                 .padding(.horizontal)
                             }
                         }
+                        
                         // Generate / Sign In Button
                         VStack {
                             Button(action: {
@@ -136,17 +136,15 @@ struct PlaylistPreviewView: View {
                                     } else {
                                         Image(systemName: authManager.isAuthenticated ? "play.circle.fill" : "music.note")
                                             .font(.title3)
-                                            //.foregroundColor(.white)
                                         Text(authManager.isAuthenticated ? "Generate Playlist" : "Sign In to Create Playlist")
                                             .fontWeight(.semibold)
-                                            //.foregroundColor(.white)
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(
                                     authManager.isAuthenticated ? buttonCyan : Color.gray.opacity(0.4)
-                                    )
+                                )
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                             }
@@ -158,9 +156,10 @@ struct PlaylistPreviewView: View {
                                 Text(generationError)
                                     .font(.caption)
                                     .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
                             }
                         }
-                        
                     }
                 }
             }
@@ -192,57 +191,72 @@ struct PlaylistPreviewView: View {
                 await musicService.searchArtists(country: country.name, genre: genre)
                 print(musicService.artists)
                 
-                // Fetch artist images from Spotify
+                // Future: fetch artist images from Spotify
                 if !musicService.artists.isEmpty {
                     let artistIds = musicService.artists.compactMap { $0.spotifyID }
-                    print(artistIds)
-                    if !artistIds.isEmpty {
-                        //todo: fetch artists
-                    }
+                    print("Artist IDs:", artistIds)
                 }
             }
         }
     }
     
-    
+    // MARK: - Playlist Generation
     
     private func generatePlaylist() {
-        let artistsList = musicService.artists   // allow name-based search
-        
+        let artistsList = musicService.artists
+        let market = SpotifyCountryCodes.code(for: country.name)
+
         guard !artistsList.isEmpty else {
-            generationError = "No artists found."
+            generationError = "No artists found for this country/genre."
             return
         }
-        
+
         isGenerating = true
         generationError = nil
-        
+
         Task {
             do {
                 let playlist = try await SpotifyWebAPI.shared.generatePlaylist(
-                    countryCode: "US",
+                    countryCode: market,
                     countryName: country.name,
                     genre: genre,
-                    artists: artistsList,     // <-- use full list
+                    artists: artistsList,
                     tracksPerArtist: 2
                 )
-                
+
                 print("Created playlist:", playlist.name, playlist.id)
+
+            } catch let serviceError as SpotifyServiceError {
+                switch serviceError {
+                case .noAccessToken:
+                    generationError = "You’re not logged into Spotify. Please sign in and try again."
+                    showingAuthAlert = true
+
+                case .invalidURL:
+                    generationError = "Internal error building Spotify URL."
+
+                case .badResponse(let status, let message):
+                    generationError = "Spotify error \(status): \(message)"
+                    print("Spotify badResponse:", status, message)
+
+                case .noTracksFound:
+                    generationError = "Spotify couldn’t find any tracks for this country/genre combo."
+                }
+
             } catch {
-                print("Playlist generation failed:", error)
-                generationError = "Failed to generate playlist."
+                generationError = "Unexpected error: \(error.localizedDescription)"
+                print("Playlist generation failed with unexpected error:", error)
             }
-            
+
             isGenerating = false
         }
     }
 }
-
 // MARK: - Artist Card
 
 struct ArtistCard: View {
     let artist: Artist
-    let imageUrl: String? // Add this parameter
+    let imageUrl: String? // TODO: Add this parameter
     let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
 
     
