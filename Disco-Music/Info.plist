@@ -20,5 +20,20 @@
 		<string>spotify</string>
 		<string>spotify-action</string>
 	</array>
+	<key>Transport Security Settings</key>
+	<dict>
+		<key>Exception Domains</key>
+		<dict>
+			<key>musicbrainz.org</key>
+			<dict>
+				<key>Allow Arbitrary Loads in Web Content</key>
+				<true/>
+				<key>Allows Arbitrary Loads</key>
+				<true/>
+				<key>Includes Subdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

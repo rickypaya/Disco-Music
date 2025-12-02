@@ -8,66 +8,87 @@ struct CountryDetailView: View {
     @State private var selectedGenre: String?
     @State private var showPlaylistPreview = false
     
+    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
+    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
+
+
+    
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 5) {
-                    // Header
-                    HStack {
-                        Text(country.flagEmoji)
-                            .font(.system(size: 80))
-                        
-                        VStack(alignment: .leading) {
-                            Text(country.name)
-                                .font(.title)
-                                .fontWeight(.bold)
-                            Text(country.region)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+            ZStack {
+                LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 5) {
+                        // Header
+                        HStack {
+                            Text(country.flagEmoji)
+                                .font(.system(size: 80))
+                            
+                            VStack(alignment: .leading) {
+                                Text(country.name)
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.appTextLight)
+
+                                Text(country.region)
+                                    .font(.subheadline)
+                                    .foregroundColor(.appTextLight)
+                                    .opacity(0.7)
+
+                            }
+                            Spacer()
                         }
-                        Spacer()
-                    }
-                    .padding()
-                    
-                    Divider()
-                    
-                    // Details
-                    DetailRow(label: "Capital", value: country.capital)
-                    DetailRow(label: "Population", value: formattedPopulation(country.population))
-                    DetailRow(label: "Region", value: country.region)
-                    if let currency = country.currency {
-                        DetailRow(label: "Currency", value: currency)
-                    }
-                    DetailRow(label: "Coordinates", value: String(format: "%.4f°, %.4f°", country.latitude, country.longitude))
-                    
-                    Divider()
-                    
-                    // Music Genres Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Originating Genres")
-                            .font(.headline)
-                            .padding(.horizontal)
+                        .padding()
                         
-                        Text("Tap a genre to discover artists and create a playlist")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal)
+                        Divider()
                         
-                        VStack(spacing: 12) {
-                            ForEach(country.genres, id: \.self) { genre in
-                                GenreButton(genre: genre) {
-                                    selectedGenre = genre
-                                    showPlaylistPreview = true
+                        // Details
+                        DetailRow(label: "Capital", value: country.capital)
+                        
+                        DetailRow(label: "Population", value: formattedPopulation(country.population))
+                        
+                        DetailRow(label: "Region", value: country.region)
+                        
+                        if let currency = country.currency {
+                            DetailRow(label: "Currency", value: currency)
+                        }
+                        
+                        DetailRow(label: "Coordinates", value: String(format: "%.4f°, %.4f°", country.latitude, country.longitude))
+                        
+                        Divider()
+                        
+                        // Music Genres Section
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Originating Genres")
+                                .font(.headline)
+                                .padding(.horizontal)
+                                .foregroundColor(.appTextLight)
+
+                            
+                            Text("Tap a genre to discover artists and create a playlist")
+                                .font(.caption)
+                                .foregroundColor(.appTextLight)
+                                .opacity(0.7)
+                                .padding(.horizontal)
+                            
+                            
+                            VStack(spacing: 12) {
+                                ForEach(country.genres, id: \.self) { genre in
+                                    GenreButton(genre: genre) {
+                                        selectedGenre = genre
+                                        showPlaylistPreview = true
+                                    }
                                 }
                             }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
+                        .padding(.vertical)
+                        
+                        //Spacer()
                     }
-                    .padding(.vertical)
-                    
-                    Spacer()
+                    .padding()
                 }
-                .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -100,9 +121,11 @@ struct DetailRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.appTextLight)
+                .opacity(0.7)
             Text(value)
                 .font(.body)
+                .foregroundColor(.appTextLight)
         }
         .padding(.horizontal)
         .padding(.vertical, 4)
@@ -114,18 +137,21 @@ struct DetailRow: View {
 struct GenreButton: View {
     let genre: String
     let action: () -> Void
+    let buttonCyan = Color(red: 0.0, green: 0.671, blue: 0.725)
+
     
     var body: some View {
         Button(action: action) {
             HStack {
                 Image(systemName: "music.note.list")
-                    .foregroundColor(.blue)
+                    .foregroundColor(.appTextLight)
                     .font(.title3)
                 
                 Text(genre)
                     .font(.body)
                     .fontWeight(.medium)
-                
+                    .foregroundColor(.appTextLight)
+
                 Spacer()
                 
                 Image(systemName: "chevron.right")
@@ -133,7 +159,7 @@ struct GenreButton: View {
                     .font(.caption)
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color(buttonCyan))
             .cornerRadius(12)
         }
         .buttonStyle(PlainButtonStyle())

@@ -228,16 +228,56 @@ struct ArtistDetail: Codable {
     let images: [SpotifyImage]
 }
 
-struct Playlist: Codable {
+//MARK: - Playlist Data Models
+
+struct SpotifyPlaylist: Decodable, Identifiable {
     let id: String
     let name: String
+    let uri: String?
     let description: String?
-    let externalUrls: [String: String]?
+    let images: [SpotifyImage]?
+    let tracks: SpotifyPlaylistTracks?
     
     enum CodingKeys: String, CodingKey {
-        case id, name, description
-        case externalUrls = "external_urls"
+        case id, name, uri, description, images, tracks
     }
+}
+
+struct SpotifyPlaylistTracks: Decodable {
+    let items: [SpotifyPlaylistTrackItem]
+}
+
+struct SpotifyPlaylistTrackItem: Decodable {
+    let track: SpotifyTrack?
+}
+
+struct SpotifyTrack: Decodable, Identifiable, Equatable {
+    let id: String
+    let name: String
+    let uri: String
+    let artists: [SpotifyTrackArtist]
+    let album: SpotifyTrackAlbum
+    let durationMs: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, uri, artists, album
+        case durationMs = "duration_ms"
+    }
+    
+    static func == (lhs: SpotifyTrack, rhs: SpotifyTrack) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+struct SpotifyTrackArtist: Decodable {
+    let id: String
+    let name: String
+}
+
+struct SpotifyTrackAlbum: Decodable {
+    let id: String
+    let name: String
+    let images: [SpotifyImage]
 }
 
 struct UserProfile: Codable {
@@ -257,4 +297,11 @@ enum SpotifyError: Error {
     case noData
     case requestFailed
     case noAccessToken
+}
+
+enum SpotifyServiceError: Error {
+    case noAccessToken
+    case invalidURL
+    case badResponse(status: Int, message: String)
+    case noTracksFound
 }

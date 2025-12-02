@@ -8,9 +8,12 @@ struct PlaylistPreviewView: View {
     
     @Environment(\.dismiss) var dismiss
     @StateObject private var musicService = MusicBrainzService()
-    @StateObject private var authManager = SpotifyAuthManager.shared
-    @State private var showingLoginController = false
-    @State private var showingAuthAlert = false
+    @StateObject private var spotifyAPI = SpotifyWebAPI.shared
+    @StateObject private var storageManager = PlaylistStorageManager.shared
+    
+    @State private var generatedPlaylist: SpotifyPlaylist?
+    @State private var isGenerating = false
+    @State private var generationError: String?
     
     var body: some View {
         NavigationView {
@@ -96,35 +99,48 @@ struct PlaylistPreviewView: View {
                         }
                     }
                     
-                    // Generate/Sign In Button
+                    // Generate Button
                     VStack {
-                        Button(action: {
-                            if authManager.isAuthenticated {
-                                // Generate playlist
-                                generatePlaylist()
-                            } else {
-                                // Show auth alert
-                                showingAuthAlert = true
-                            }
-                        }) {
+                        if isGenerating {
                             HStack {
-                                Image(systemName: authManager.isAuthenticated ? "play.circle.fill" : "music.note")
-                                    .font(.title3)
-                                Text(authManager.isAuthenticated ? "Generate Playlist" : "Sign In to Create Playlist")
+                                ProgressView()
+                                    .tint(.white)
+                                Text("Generating Playlist...")
                                     .fontWeight(.semibold)
+                                    .foregroundColor(.white)
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(
-                                authManager.isAuthenticated ?
-                                    Color.blue :
-                                    Color(red: 30/255, green: 215/255, blue: 96/255)
-                            )
-                            .foregroundColor(.white)
+                            .background(Color.blue.opacity(0.7))
                             .cornerRadius(12)
+                            .padding()
+                        } else {
+                            Button(action: {
+                                generatePlaylist()
+                            }) {
+                                HStack {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title3)
+                                    Text("Generate Playlist")
+                                        .fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                            }
+                            .padding()
+                            .background(.clear)
                         }
-                        .padding()
-                        .background(.clear)
+                        
+                        if let error = generationError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
                     }
                 }
             }
@@ -136,50 +152,104 @@ struct PlaylistPreviewView: View {
                     }
                 }
             }
-            .background(
-                SpotifyLoginControllerWrapper(
-                    isPresented: $showingLoginController,
-                    onSuccess: {
-                        showingLoginController = false
-                    }
-                )
-            )
-            .alert("Sign In Required", isPresented: $showingAuthAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Sign In to Spotify") {
-                    showingLoginController = true
-                }
-            } message: {
-                Text("Connect your Spotify account to create and save playlists.")
-            }
             .task {
                 await musicService.searchArtists(country: country.name, genre: genre)
-                print(musicService.artists)
+            }
+            .sheet(item: $generatedPlaylist) { playlist in
+                PlaylistDetailView(
+                    country: country,
+                    genre: genre,
+                    playlist: playlist
+                )
+            }
+        }
+    }
+    
+    // MARK: - Generate Playlist
+    
+    private func generatePlaylist() {
+        isGenerating = true
+        generationError = nil
+        
+        Task {
+            do {
+                // Get country code for Spotify market
+                let countryCode = getCountryCode(for: country.name)
                 
-                // Fetch artist images from Spotify
-                if !musicService.artists.isEmpty {
-                    let artistIds = musicService.artists.compactMap { $0.spotifyID }
-                    print(artistIds)
-                    if !artistIds.isEmpty {
-                        //todo: fetch artists
-                    }
+                // Generate playlist using Spotify API
+                let playlist = try await spotifyAPI.generatePlaylist(
+                    countryCode: countryCode,
+                    countryName: country.name,
+                    genre: genre,
+                    artists: musicService.artists,
+                    tracksPerArtist: 2
+                )
+                
+                await MainActor.run {
+                    isGenerating = false
+                    storageManager.savePlaylist(playlist, country: country, genre: genre)
+                    generatedPlaylist = playlist
+                }
+            } catch {
+                await MainActor.run {
+                    isGenerating = false
+                    generationError = "Failed to generate playlist: \(error.localizedDescription)"
                 }
             }
         }
     }
     
-    private func generatePlaylist() {
-        // TODO: Implement playlist generation
-        print("Generate playlist for \(genre) from \(country.name)")
-        print("Access Token: \(authManager.accessToken ?? "none")")
+    private func getCountryCode(for country: String) -> String {
+        let countryCodeMap: [String: String] = [
+            "United States": "US",
+            "United Kingdom": "GB",
+            "France": "FR",
+            "Germany": "DE",
+            "Japan": "JP",
+            "China": "CN",
+            "India": "IN",
+            "Brazil": "BR",
+            "Australia": "AU",
+            "Canada": "CA",
+            "Russia": "RU",
+            "South Africa": "ZA",
+            "Egypt": "EG",
+            "Mexico": "MX",
+            "Italy": "IT",
+            "Spain": "ES",
+            "Argentina": "AR",
+            "South Korea": "KR",
+            "Turkey": "TR",
+            "Saudi Arabia": "SA"
+        ]
+        
+        return countryCodeMap[country] ?? "US"
     }
 }
 
+#Preview("Playlist Preview") {
+    PlaylistPreviewView(
+        country: Country(
+            name: "Brazil",
+            capital: "Brasília",
+            latitude: -15.8267,
+            longitude: -47.9218,
+            population: 212559417,
+            flagEmoji: "🇧🇷",
+            region: "South America",
+            currency: "BRL",
+            genres: ["Samba", "Bossa Nova", "Forró"]
+        ),
+        genre: "Bossa Nova"
+    )
+}
 // MARK: - Artist Card
 
 struct ArtistCard: View {
     let artist: Artist
-    let imageUrl: String? // Add this parameter
+    let imageUrl: String? // TODO: Add this parameter
+    let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
+
     
     var body: some View {
         HStack(spacing: 16) {
@@ -210,10 +280,13 @@ struct ArtistCard: View {
                 Text(artist.name)
                     .font(.headline)
                     .lineLimit(1)
+                    .foregroundColor(.appTextLight)
                 
                 Text(artist.displayInfo ?? "Artist")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.appTextLight)
+                    .opacity(0.7)
+                    //.foregroundColor(.secondary)
                     .lineLimit(1)
             }
             
@@ -222,12 +295,15 @@ struct ArtistCard: View {
             Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
                 .font(.caption)
+            
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(
+            Color(buttonCyan))
         .cornerRadius(12)
     }
     
+    //TODO: REPLACE holders with images from spotify
     private var placeholderCircle: some View {
         Circle()
             .fill(
@@ -240,25 +316,8 @@ struct ArtistCard: View {
             .frame(width: 60, height: 60)
             .overlay(
                 Image(systemName: "music.mic")
-                    .foregroundColor(.white)
+                    .foregroundColor(.appTextLight)
                     .font(.title2)
             )
     }
-}
-
-#Preview("Playlist Preview") {
-    PlaylistPreviewView(
-        country: Country(
-            name: "Brazil",
-            capital: "Brasília",
-            latitude: -15.8267,
-            longitude: -47.9218,
-            population: 212559417,
-            flagEmoji: "🇧🇷",
-            region: "South America",
-            currency: "BRL",
-            genres: ["Samba", "Bossa Nova", "Forró"]
-        ),
-        genre: "Bossa Nova"
-    )
 }
