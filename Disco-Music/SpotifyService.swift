@@ -5,27 +5,11 @@
 //  Created by Parissa Teli on 11/28/25.
 
 import Foundation
+import Combine
 
 // MARK: - Public Models & Errors
 
-enum SpotifyServiceError: Error {
-    case noAccessToken
-    case invalidURL
-    case badResponse(status: Int, message: String)
-    case noTracksFound
-}
 
-struct SpotifyTrack: Decodable {
-    let id: String
-    let name: String
-    let uri: String
-}
-
-struct SpotifyPlaylist: Decodable, Identifiable {
-    let id: String
-    let name: String
-    let uri: String?
-}
 
 // MARK: - Internal DTOs (Web API shapes)
 
@@ -68,7 +52,10 @@ private struct AnyEncodable: Encodable {
 
 // MARK: - Spotify Web API Service
 
-final class SpotifyWebAPI {
+final class SpotifyWebAPI: ObservableObject {
+    @Published var currentTrack: SpotifyTrack?
+    @Published var isPlaying: Bool = false
+    @Published var currentPlaylist: SpotifyPlaylist?
 
     static let shared = SpotifyWebAPI()
     private init() {}
@@ -211,6 +198,22 @@ final class SpotifyWebAPI {
             decode: SnapshotResponse.self
         )
     }
+    
+    func fetchFullPlaylist(playlistId: String, market: String? = nil) async throws -> SpotifyPlaylist {
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "fields", value: "id,name,description,uri,images,tracks.items(track(id,name,uri,artists,album,duration_ms))")
+        ]
+        
+        if let market = market {
+            queryItems.append(URLQueryItem(name: "market", value: market))
+        }
+        
+        return try await request(
+            path: "playlists/\(playlistId)",
+            queryItems: queryItems,
+            decode: SpotifyPlaylist.self
+        )
+    }
 
     /// GET /v1/search?type=artist – search by name (+ optional genre/maket bias)
     fileprivate func searchArtistByName(
@@ -320,6 +323,9 @@ final class SpotifyWebAPI {
             trackURIs: uniqueURIs
         )
 
-        return playlist
+        let completePlaylist = try await fetchFullPlaylist(playlistId: playlist.id, market: countryCode)
+        
+        return completePlaylist
     }
+    
 }

@@ -230,7 +230,7 @@ struct FeatureRow: View {
 // MARK: - Main Content View
 
 enum NavigationTab {
-    case globe, list, about
+    case globe, list, recent, about
 }
 
 struct ContentView: View {
@@ -259,6 +259,8 @@ struct ContentView: View {
                 .edgesIgnoringSafeArea(.all)
             case .list:
                 CountriesListView(dataProvider: dataProvider, selectedCountry: $selectedCountry)
+            case .recent:
+                RecentPlaylistsView()
             case .about:
                 AboutView()
             }
@@ -303,7 +305,7 @@ struct ContentView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 
-                HStack(spacing: 30) {
+                HStack(spacing: 10) {
                     DashboardButton(icon: "globe", title: "Globe", isSelected: selectedTab == .globe) {
                         selectedTab = .globe
                     }
@@ -312,6 +314,14 @@ struct ContentView: View {
                         selectedTab = .list
                     }
                     
+                    DashboardButton(
+                        icon: "clock.arrow.circlepath",
+                        title: "Recent",
+                        isSelected: selectedTab == .recent,
+                    ) {
+                        selectedTab = .recent
+                    }
+
                     DashboardButton(icon: "info.circle", title: "About", isSelected: selectedTab == .about) {
                         selectedTab = .about
                     }
