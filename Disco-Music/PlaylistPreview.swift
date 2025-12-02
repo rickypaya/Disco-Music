@@ -227,22 +227,6 @@ struct PlaylistPreviewView: View {
     }
 }
 
-#Preview("Playlist Preview") {
-    PlaylistPreviewView(
-        country: Country(
-            name: "Brazil",
-            capital: "Brasília",
-            latitude: -15.8267,
-            longitude: -47.9218,
-            population: 212559417,
-            flagEmoji: "🇧🇷",
-            region: "South America",
-            currency: "BRL",
-            genres: ["Samba", "Bossa Nova", "Forró"]
-        ),
-        genre: "Bossa Nova"
-    )
-}
 // MARK: - Artist Card
 
 struct ArtistCard: View {

@@ -164,6 +164,128 @@ class SpotifyPlayerManager: NSObject, ObservableObject {
         }
     }
     
+    func playTrack(uri: String, completion: ((Bool) -> Void)? = nil) {
+        guard isConnected else {
+            errorMessage = "Not connected to Spotify. Please connect first."
+            completion?(false)
+            return
+        }
+        
+        appRemote?.playerAPI?.play(uri, callback: { [weak self] _, error in
+            if let error = error {
+                self?.errorMessage = "Failed to play track: \(error.localizedDescription)"
+                print("Error playing track: \(error)")
+                completion?(false)
+            } else {
+                print("Successfully started playing track: \(uri)")
+                self?.errorMessage = nil
+                completion?(true)
+            }
+        })
+    }
+    
+    /// Play a track from a Track model
+    func playTrack(_ track: Track, completion: ((Bool) -> Void)? = nil) {
+        playTrack(uri: track.uri, completion: completion)
+    }
+    
+    /// Play multiple tracks starting from a specific index, maintaining order
+    func playTracks(uris: [String], startingAt index: Int = 0, completion: ((Bool) -> Void)? = nil) {
+        guard isConnected else {
+            errorMessage = "Not connected to Spotify. Please connect first."
+            completion?(false)
+            return
+        }
+        
+        guard !uris.isEmpty, index >= 0, index < uris.count else {
+            errorMessage = "Invalid track list or index"
+            completion?(false)
+            return
+        }
+        
+        // Play the selected track
+        let selectedTrackURI = uris[index]
+        print(uris)
+        
+        appRemote?.playerAPI?.play(selectedTrackURI, callback: { [weak self] _, error in
+            if let error = error {
+                self?.errorMessage = "Failed to play tracks: \(error.localizedDescription)"
+                print("Error playing tracks: \(error)")
+                completion?(false)
+            } else {
+                print("Successfully started playing track at index \(index)")
+                self?.errorMessage = nil
+                
+                // Queue remaining tracks in order (from index + 1 to end)
+                self?.queueRemainingTracks(uris: uris, startingFrom: index + 1)
+                completion?(true)
+            }
+        })
+    }
+    
+    /// Play a list of Track models, starting from a specific index
+    func playTracks(_ tracks: [Track], startingAt index: Int = 0, completion: ((Bool) -> Void)? = nil) {
+        let uris = tracks.map { $0.uri }
+        playTracks(uris: uris, startingAt: index, completion: completion)
+    }
+    
+    /// Play playlist from SpotifyPlaylist starting at a specific track
+    func playPlaylistTracks(from playlist: SpotifyPlaylist, startingAt index: Int = 0, completion: ((Bool) -> Void)? = nil) {
+        guard let tracks = playlist.tracks?.items else {
+            errorMessage = "No tracks in playlist"
+            completion?(false)
+            return
+        }
+        
+        let trackURIs = tracks.compactMap { $0.track?.uri }
+        playTracks(uris: trackURIs, startingAt: index, completion: completion)
+    }
+    
+    /// Play a SpotifyTrack and queue subsequent tracks from a list
+    func playSpotifyTrack(_ track: SpotifyTrack, fromPlaylist tracks: [SpotifyTrack], startingAt index: Int, completion: ((Bool) -> Void)? = nil) {
+        let uris = tracks.map { "spotify:track:\($0.id)" }
+        playTracks(uris: uris, startingAt: index, completion: completion)
+    }
+    
+    /// Queue tracks after the current track in order
+    private func queueRemainingTracks(uris: [String], startingFrom index: Int) {
+        guard index < uris.count else { return }
+        
+        // Queue tracks sequentially to maintain order
+        for i in index..<uris.count {
+            let uri = uris[i]
+            appRemote?.playerAPI?.enqueueTrackUri(uri, callback: { result, error in
+                if let error = error {
+                    print("Failed to queue track \(uri): \(error.localizedDescription)")
+                } else {
+                    print("Successfully queued track at position \(i): \(uri)")
+                }
+            })
+        }
+    }
+    
+    /// Play a playlist
+    func playPlaylist(spotifyID: String, completion: ((Bool) -> Void)? = nil) {
+        guard isConnected else {
+            errorMessage = "Not connected to Spotify. Please connect first."
+            completion?(false)
+            return
+        }
+        
+        let playlistURI = "spotify:playlist:\(spotifyID)"
+        appRemote?.playerAPI?.play(playlistURI, callback: { [weak self] _, error in
+            if let error = error {
+                self?.errorMessage = "Failed to play playlist: \(error.localizedDescription)"
+                print("Error playing playlist: \(error)")
+                completion?(false)
+            } else {
+                print("Successfully started playing playlist: \(playlistURI)")
+                self?.errorMessage = nil
+                completion?(true)
+            }
+        })
+    }
+    
     // MARK: - Playback State Updates
     
     private func subscribeToPlayerState() {

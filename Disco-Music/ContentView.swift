@@ -52,10 +52,10 @@ struct CountriesListView: View {
                 }
                 //.listRowBackground(0.1)
                 .listRowBackground(Color.appBackgroundDark.opacity(0.1))
-
             }
             .scrollContentBackground(.hidden)
             .background(LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            
             )
             .searchable(text: $searchText, prompt: "Search countries or capitals")
             .navigationTitle("Countries")
@@ -177,6 +177,7 @@ struct AboutView: View {
                         Spacer()
                     }
                     .padding()
+                    .padding(.bottom, 100)
                 }
                 .navigationTitle("About")
                 .toolbarBackground(.clear, for: .navigationBar)

@@ -33,6 +33,18 @@ struct RecentPlaylistsView: View {
     var body: some View {
         NavigationView {
             ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 38/255, green: 147/255, blue: 155/255),
+                        Color(red: 25/255, green: 110/255, blue: 125/255),
+                        Color(red: 20/255, green: 90/255, blue: 100/255)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
                 if storageManager.savedPlaylists.isEmpty {
                     emptyStateView
                 } else {
@@ -40,17 +52,26 @@ struct RecentPlaylistsView: View {
                 }
             }
             .navigationTitle("Recent Playlists")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(
+                Color(red: 38/255, green: 147/255, blue: 155/255),
+                for: .navigationBar
+            )
             .toolbar {
                 if !storageManager.savedPlaylists.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Menu {
                             Button(role: .destructive, action: {
+                                playlistToDelete = nil
                                 showDeleteConfirmation = true
                             }) {
                                 Label("Clear All", systemImage: "trash")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
+                                .foregroundColor(.white)
                         }
                     }
                 }
@@ -59,10 +80,19 @@ struct RecentPlaylistsView: View {
             .alert("Clear All Playlists", isPresented: $showDeleteConfirmation) {
                 Button("Cancel", role: .cancel) {}
                 Button("Clear All", role: .destructive) {
-                    storageManager.clearAll()
+                    if let playlist = playlistToDelete {
+                        storageManager.removePlaylist(playlist)
+                        playlistToDelete = nil
+                    } else {
+                        storageManager.clearAll()
+                    }
                 }
             } message: {
-                Text("Are you sure you want to delete all saved playlists? This cannot be undone.")
+                if playlistToDelete != nil {
+                    Text("Are you sure you want to delete this playlist? This cannot be undone.")
+                } else {
+                    Text("Are you sure you want to delete all saved playlists? This cannot be undone.")
+                }
             }
             .sheet(item: $selectedPlaylistData) { data in
                 PlaylistLoadingWrapper(
@@ -76,23 +106,34 @@ struct RecentPlaylistsView: View {
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "music.note.list")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
+        VStack(spacing: 24) {
+            Spacer()
             
-            Text("No Playlists Yet")
-                .font(.title2)
-                .fontWeight(.semibold)
+            // Icon with gradient background
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "music.note.list")
+                    .font(.system(size: 50))
+                    .foregroundColor(.white.opacity(0.9))
+            }
             
-            Text("Start exploring countries and genres to generate your first playlist!")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            VStack(spacing: 12) {
+                Text("No Playlists Yet")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Text("Start exploring countries and genres to generate your first playlist!")
+                    .font(.body)
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
             
             Spacer()
-                .frame(height: 40)
         }
         .padding()
     }
@@ -101,58 +142,81 @@ struct RecentPlaylistsView: View {
     
     private var playlistListView: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: 0) {
                 // Stats header
                 if !searchText.isEmpty && filteredPlaylists.count != storageManager.savedPlaylists.count {
-                    Text("Found \(filteredPlaylists.count) of \(storageManager.savedPlaylists.count) playlists")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
+                    HStack {
+                        Text("Found \(filteredPlaylists.count) of \(storageManager.savedPlaylists.count) playlists")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.8))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                 } else {
                     statsHeaderView
+                        .padding(.top, 8)
+                        .padding(.bottom, 16)
                 }
                 
                 // Playlist cards
-                ForEach(filteredPlaylists) { playlist in
-                    PlaylistCard(playlist: playlist) {
-                        handlePlaylistTap(playlist)
-                    } onDelete: {
-                        playlistToDelete = playlist
-                        showDeleteConfirmation = true
+                LazyVStack(spacing: 12) {
+                    ForEach(filteredPlaylists) { playlist in
+                        PlaylistCard(playlist: playlist) {
+                            handlePlaylistTap(playlist)
+                        } onDelete: {
+                            playlistToDelete = playlist
+                            showDeleteConfirmation = true
+                        }
                     }
                 }
+                .padding(.horizontal, 16)
             }
-            .padding()
+            .padding(.bottom, 100)
         }
     }
     
     // MARK: - Stats Header
     
     private var statsHeaderView: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 20) {
-                StatBadge(
-                    value: "\(storageManager.totalPlaylistCount)",
-                    label: "Playlists",
-                    icon: "music.note.list"
-                )
-                
-                StatBadge(
-                    value: "\(storageManager.uniqueCountries.count)",
-                    label: "Countries",
-                    icon: "globe"
-                )
-                
-                StatBadge(
-                    value: "\(storageManager.uniqueGenres.count)",
-                    label: "Genres",
-                    icon: "guitars"
-                )
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
+        HStack(spacing: 0) {
+            StatBadge(
+                value: "\(storageManager.totalPlaylistCount)",
+                label: "Playlists",
+                icon: "music.note.list"
+            )
+            
+            Divider()
+                .background(Color.white.opacity(0.3))
+                .frame(height: 60)
+            
+            StatBadge(
+                value: "\(storageManager.uniqueCountries.count)",
+                label: "Countries",
+                icon: "globe"
+            )
+            
+            Divider()
+                .background(Color.white.opacity(0.3))
+                .frame(height: 60)
+            
+            StatBadge(
+                value: "\(storageManager.uniqueGenres.count)",
+                label: "Genres",
+                icon: "guitars"
+            )
         }
+        .padding(.vertical, 20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 16)
     }
     
     // MARK: - Actions
@@ -283,53 +347,87 @@ struct PlaylistErrorView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                Spacer()
+            ZStack {
+                // Background gradient matching theme
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 38/255, green: 147/255, blue: 155/255),
+                        Color(red: 25/255, green: 110/255, blue: 125/255)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
                 
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 60))
-                    .foregroundColor(.orange)
-                
-                Text("Couldn't Load Playlist")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
-                Text(error)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-                
-                VStack(spacing: 12) {
-                    Button(action: onRetry) {
-                        HStack {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Try Again")
-                        }
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                VStack(spacing: 28) {
+                    Spacer()
+                    
+                    // Error icon
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                        
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 50))
+                            .foregroundColor(.yellow.opacity(0.9))
                     }
                     
-                    Button(action: { dismiss() }) {
-                        Text("Close")
+                    VStack(spacing: 12) {
+                        Text("Couldn't Load Playlist")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        Text(error)
+                            .font(.body)
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    
+                    VStack(spacing: 12) {
+                        Button(action: onRetry) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Try Again")
+                            }
                             .font(.headline)
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray5))
-                            .foregroundColor(.primary)
-                            .cornerRadius(12)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.2))
+                            .foregroundColor(.white)
+                            .cornerRadius(14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                        
+                        Button(action: { dismiss() }) {
+                            Text("Close")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color.white.opacity(0.1))
+                                .foregroundColor(.white)
+                                .cornerRadius(14)
+                        }
                     }
+                    .padding(.horizontal, 40)
+                    .padding(.top, 20)
+                    
+                    Spacer()
                 }
-                .padding(.horizontal, 40)
-                
-                Spacer()
             }
             .navigationTitle(playlistName)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(
+                Color(red: 38/255, green: 147/255, blue: 155/255),
+                for: .navigationBar
+            )
         }
     }
 }
@@ -341,41 +439,43 @@ struct PlaylistCard: View {
     let onTap: () -> Void
     let onDelete: () -> Void
     
+    @State private var isPressed = false
+    
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 // Playlist artwork
                 playlistArtwork
                 
                 // Playlist info
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Text(playlist.countryFlagEmoji)
                             .font(.title3)
                         
                         Text(playlist.countryName)
                             .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.secondary)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white.opacity(0.9))
                     }
                     
                     Text(playlist.name)
                         .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         // Genre tag
                         Text(playlist.genre)
                             .font(.caption2)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.blue.opacity(0.15))
-                            .foregroundColor(.blue)
-                            .cornerRadius(6)
-                        
-                        Spacer()
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.white.opacity(0.25))
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
                         
                         // Track count
                         HStack(spacing: 4) {
@@ -383,28 +483,38 @@ struct PlaylistCard: View {
                                 .font(.caption2)
                             Text("\(playlist.trackCount)")
                                 .font(.caption)
+                                .fontWeight(.medium)
                         }
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.8))
+                        
+                        Spacer()
                     }
                     
                     // Date
                     Text(playlist.formattedDate)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.7))
                 }
                 
                 Spacer()
                 
                 // Chevron
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white.opacity(0.6))
             }
-            .padding(12)
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(isPressed ? 0.12 : 0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
+            )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(CardButtonStyle(isPressed: $isPressed))
         .contextMenu {
             Button(role: .destructive, action: onDelete) {
                 Label("Delete", systemImage: "trash")
@@ -431,28 +541,50 @@ struct PlaylistCard: View {
                 placeholderArtwork
             }
         }
-        .frame(width: 80, height: 80)
-        .cornerRadius(8)
+        .frame(width: 90, height: 90)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        )
     }
     
     private var placeholderArtwork: some View {
-        RoundedRectangle(cornerRadius: 8)
+        RoundedRectangle(cornerRadius: 12)
             .fill(
                 LinearGradient(
-                    gradient: Gradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)]),
+                    gradient: Gradient(colors: [
+                        Color(red: 50/255, green: 180/255, blue: 185/255),
+                        Color(red: 70/255, green: 160/255, blue: 180/255)
+                    ]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
             .overlay(
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     Text(playlist.countryFlagEmoji)
-                        .font(.title)
+                        .font(.system(size: 32))
                     Image(systemName: "music.note")
-                        .font(.caption)
+                        .font(.title3)
                         .foregroundColor(.white.opacity(0.8))
                 }
             )
+    }
+}
+
+// MARK: - Card Button Style
+
+struct CardButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { newValue in
+                isPressed = newValue
+            }
     }
 }
 
@@ -464,18 +596,19 @@ struct StatBadge: View {
     let icon: String
     
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(.blue)
+                .font(.title2)
+                .foregroundColor(.white.opacity(0.9))
             
             Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
             
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .fontWeight(.medium)
+                .foregroundColor(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
     }
@@ -488,28 +621,56 @@ struct PlaylistLoadingView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                Spacer()
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 38/255, green: 147/255, blue: 155/255),
+                        Color(red: 25/255, green: 110/255, blue: 125/255)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
                 
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .padding(.bottom, 20)
-                
-                VStack(spacing: 8) {
-                    Text("Loading Playlist")
-                        .font(.headline)
+                VStack(spacing: 24) {
+                    Spacer()
                     
-                    Text("Fetching \(playlistName) from Spotify...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                    // Loading spinner
+                    ZStack {
+                        Circle()
+                            .stroke(Color.white.opacity(0.2), lineWidth: 4)
+                            .frame(width: 60, height: 60)
+                        
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                    }
+                    
+                    VStack(spacing: 10) {
+                        Text("Loading Playlist")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                        
+                        Text("Fetching \(playlistName) from Spotify...")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
             }
             .navigationTitle(playlistName)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(
+                Color(red: 38/255, green: 147/255, blue: 155/255),
+                for: .navigationBar
+            )
         }
     }
 }
