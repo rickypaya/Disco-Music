@@ -328,4 +328,43 @@ final class SpotifyWebAPI: ObservableObject {
         return completePlaylist
     }
     
+    func fetchArtistImageURL(for artist: Artist) async throws -> URL? {
+        // 1. Resolve the Spotify artist ID (same idea as in generatePlaylist)
+        var spotifyId: String? = artist.spotifyID
+        
+        if spotifyId == nil {
+            // Fallback: search by name, no market/genre bias here (or you can add them)
+            let searchResult = try await searchArtistByName(
+                name: artist.name,
+                market: nil,
+                genreHint: nil
+            )
+            spotifyId = searchResult?.id
+        }
+        
+        guard let id = spotifyId else {
+            print("No Spotify ID found for artist: \(artist.name)")
+            return nil
+        }
+        
+        // 2. Call Spotify's /v1/artists/{id} using your existing request() helper
+        struct SpotifyArtistDetails: Decodable {
+            let images: [SpotifyImage]
+        }
+        
+        struct SpotifyImage: Decodable {
+            let url: String
+            let width: Int?
+            let height: Int?
+        }
+        
+        let details: SpotifyArtistDetails = try await request(
+            path: "artists/\(id)",
+            decode: SpotifyArtistDetails.self
+        )
+        
+        // 3. Return the highest-res image URL (Spotify puts largest first)
+        return details.images.first.flatMap { URL(string: $0.url) }
+    }
+    
 }

@@ -14,132 +14,154 @@ struct PlaylistPreviewView: View {
     @State private var generatedPlaylist: SpotifyPlaylist?
     @State private var isGenerating = false
     @State private var generationError: String?
+    @State private var artistImageURLs: [Artist.ID: String] = [:]
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 8) {
-                    Text(country.flagEmoji)
-                        .font(.system(size: 60))
-                    
-                    Text(genre)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("from \(country.name)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color(.systemGray6))
-                
-                // Artists List
-                if musicService.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .scaleEffect(1.5)
-                    Text("Discovering artists...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top)
-                    Spacer()
-                } else if let errorMessage = musicService.errorMessage {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 40))
-                            .foregroundColor(.orange)
-                        Text(errorMessage)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+            ZStack {
+                LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                VStack(spacing: 0) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text(country.flagEmoji)
+                            .font(.system(size: 60))
                         
-                        Button("Try Again") {
-                            Task {
-                                await musicService.searchArtists(country: country.name, genre: genre)
-                            }
+                        HStack {
+                            Text(country.name)
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.trailing, 8)
+                            
+                            Text(genre)
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.white.opacity(0.25)
+                                    .clipShape(Capsule())
+                                )
                         }
-                        .buttonStyle(.bordered)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    Spacer()
-                } else if musicService.artists.isEmpty {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        Image(systemName: "music.note.slash")
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray)
-                        Text("No artists found")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                        Text("Try searching for a different genre")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    
+                    // Artists List
+                    if musicService.isLoading {
+                        Spacer()
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Discovering artists...")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            Text("Featured Artists")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
+                            .padding(.top)
+                        Spacer()
+                    } else if let errorMessage = musicService.errorMessage {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40))
+                                .foregroundColor(.orange)
+                            Text(errorMessage)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                             
-                            LazyVStack(spacing: 12) {
-                                ForEach(musicService.artists) { artist in
-                                    ArtistCard(
-                                        artist: artist,
-                                        imageUrl: nil
-                                    )
+                            Button("Try Again") {
+                                Task {
+                                    await musicService.searchArtists(country: country.name, genre: genre)
                                 }
                             }
-                            .padding(.horizontal)
+                            .buttonStyle(.bordered)
                         }
-                    }
-                    
-                    // Generate Button
-                    VStack {
-                        if isGenerating {
-                            HStack {
-                                ProgressView()
-                                    .tint(.white)
-                                Text("Generating Playlist...")
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
+                        Spacer()
+                    } else if musicService.artists.isEmpty {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            Image(systemName: "music.note.slash")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray)
+                            Text("No artists found")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                            Text("Try searching for a different genre")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                Text("Featured Artists")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding()
+                                
+                                LazyVStack(spacing: 12) {
+                                    ForEach(musicService.artists) { artist in
+                                        ArtistCard(
+                                            artist: artist,
+                                            imageUrl: artistImageURLs[artist.id]
+                                        )
+                                        .task {
+                                            await loadImageForArtist(artist)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue.opacity(0.7))
-                            .cornerRadius(12)
-                            .padding()
-                        } else {
-                            Button(action: {
-                                generatePlaylist()
-                            }) {
+                        }
+                        
+                        // Generate Button
+                        VStack {
+                            if isGenerating {
                                 HStack {
-                                    Image(systemName: "play.circle.fill")
-                                        .font(.title3)
-                                    Text("Generate Playlist")
+                                    ProgressView()
+                                        .tint(.white)
+                                    Text("Generating Playlist...")
                                         .fontWeight(.semibold)
+                                        .foregroundColor(.white)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
+                                .background(Color.blue.opacity(0.7))
                                 .cornerRadius(12)
+                                .padding()
+                            } else {
+                                Button(action: {
+                                    generatePlaylist()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "play.circle.fill")
+                                            .font(.title3)
+                                        Text("Generate Playlist")
+                                            .fontWeight(.semibold)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(
+                                        LinearGradient(
+                                                gradient: Gradient(colors: [.cyan, .blue]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(12)
+                                }
+                                .padding()
+                                .background(.clear)
                             }
-                            .padding()
-                            .background(.clear)
-                        }
-                        
-                        if let error = generationError {
-                            Text(error)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
+                            
+                            if let error = generationError {
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
                         }
                     }
                 }
@@ -224,6 +246,19 @@ struct PlaylistPreviewView: View {
         ]
         
         return countryCodeMap[country] ?? "US"
+    }
+    
+    private func loadImageForArtist(_ artist: Artist) async {
+        if artistImageURLs[artist.id] != nil { return }
+        do {
+            if let url = try await spotifyAPI.fetchArtistImageURL(for: artist) {
+                await MainActor.run {
+                    artistImageURLs[artist.id] = url.absoluteString
+                }
+            }
+        } catch {
+            print("Failed to load image for \(artist.name): \(error)")
+        }
     }
 }
 
