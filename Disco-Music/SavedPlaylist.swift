@@ -45,6 +45,7 @@ class PlaylistStorageManager: ObservableObject {
     @Published var savedPlaylists: [SavedPlaylist] = []
     
     private let storageKey = "saved_playlists"
+    private let likedGenresKey = "liked_genres"
     private let userDefaults = UserDefaults.standard
     
     private init() {
@@ -93,6 +94,40 @@ class PlaylistStorageManager: ObservableObject {
     /// Check if a playlist is already saved
     func isPlaylistSaved(spotifyId: String) -> Bool {
         savedPlaylists.contains { $0.spotifyPlaylistId == spotifyId }
+    }
+    
+    /// Add a liked genre for a specific country
+    func addLikedGenre(_ genre: String, for country: Country) {
+        var likedGenres = loadLikedGenres()
+        var genresForCountry = likedGenres[country.name] ?? []
+        if !genresForCountry.contains(genre) {
+            genresForCountry.append(genre)
+            likedGenres[country.name] = genresForCountry
+            persistLikedGenres(likedGenres)
+            print("❤️ Liked genre '\(genre)' for '\(country.name)'")
+        }
+    }
+    
+    /// Remove a liked genre for a specific country
+    func removeLikedGenre(_ genre: String, for country: Country) {
+        var likedGenres = loadLikedGenres()
+        var genresForCountry = likedGenres[country.name] ?? []
+        if let index = genresForCountry.firstIndex(of: genre) {
+            genresForCountry.remove(at: index)
+            if genresForCountry.isEmpty {
+                likedGenres.removeValue(forKey: country.name)
+            } else {
+                likedGenres[country.name] = genresForCountry
+            }
+            persistLikedGenres(likedGenres)
+            print("💔 Unliked genre '\(genre)' for '\(country.name)'")
+        }
+    }
+    
+    /// Check if a genre is liked for a specific country
+    func isGenreLiked(_ genre: String, for country: Country) -> Bool {
+        let likedGenres = loadLikedGenres()
+        return likedGenres[country.name]?.contains(genre) == true
     }
     
     // MARK: - Filtering & Sorting
@@ -157,6 +192,21 @@ class PlaylistStorageManager: ObservableObject {
             print("💾 Persisted \(savedPlaylists.count) playlists")
         } catch {
             print("❌ Failed to persist playlists: \(error)")
+        }
+    }
+    
+    public func loadLikedGenres() -> [String: [String]] {
+        if let data = userDefaults.data(forKey: likedGenresKey) {
+            if let decoded = try? JSONDecoder().decode([String: [String]].self, from: data) {
+                return decoded
+            }
+        }
+        return [:]
+    }
+    
+    private func persistLikedGenres(_ likedGenres: [String: [String]]) {
+        if let encoded = try? JSONEncoder().encode(likedGenres) {
+            userDefaults.set(encoded, forKey: likedGenresKey)
         }
     }
 }

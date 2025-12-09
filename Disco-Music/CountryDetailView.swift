@@ -5,105 +5,83 @@ import SwiftUI
 struct CountryDetailView: View {
     let country: Country
     @Environment(\.dismiss) var dismiss
-    @State private var selectedGenre: String?
-    @State private var showPlaylistPreview = false
-    
-    //let backgroundBlue = Color(red: 0.047, green: 0.490, blue: 0.627)
-    //let backgroundBlueDark = Color(red: 0.04, green: 0.25, blue: 0.31)
-
+    // Removed: @State private var selectedGenre: String?
 
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 5) {
-                        // Header
-                        HStack {
-                            Text(country.flagEmoji)
-                                .font(.system(size: 80))
-                            
-                            VStack(alignment: .leading) {
-                                Text(country.name)
-                                    .font(.title)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.appTextLight)
-
-                                Text(country.region)
-                                    .font(.subheadline)
-                                    .foregroundColor(.appTextLight)
-                                    .opacity(0.7)
-
-                            }
-                            Spacer()
-                        }
-                        .padding()
+        ZStack {
+            LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 5) {
+                    // Header
+                    HStack {
+                        Text(country.flagEmoji)
+                            .font(.system(size: 80))
                         
-                        Divider()
-                        
-                        // Details
-                        DetailRow(label: "Capital", value: country.capital)
-                        
-                        DetailRow(label: "Population", value: formattedPopulation(country.population))
-                        
-                        DetailRow(label: "Region", value: country.region)
-                        
-                        if let currency = country.currency {
-                            DetailRow(label: "Currency", value: currency)
-                        }
-                        
-                        DetailRow(label: "Coordinates", value: String(format: "%.4f°, %.4f°", country.latitude, country.longitude))
-                        
-                        Divider()
-                        
-                        // Music Genres Section
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Originating Genres")
-                                .font(.headline)
-                                .padding(.horizontal)
+                        VStack(alignment: .leading) {
+                            Text(country.name)
+                                .font(.title)
+                                .fontWeight(.bold)
                                 .foregroundColor(.appTextLight)
 
-                            
-                            Text("Tap a genre to discover artists and create a playlist")
-                                .font(.caption)
+                            Text(country.region)
+                                .font(.subheadline)
                                 .foregroundColor(.appTextLight)
                                 .opacity(0.7)
-                                .padding(.horizontal)
-                            
-                            
-                            VStack(spacing: 12) {
-                                ForEach(country.genres, id: \.self) { genre in
-                                    GenreButton(genre: genre) {
-                                        selectedGenre = genre
-                                        showPlaylistPreview = true
-                                    }
-                                }
-                            }
-                            .padding(.horizontal)
+
                         }
-                        .padding(.vertical)
-                        
-                        //Spacer()
+                        Spacer()
                     }
                     .padding()
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
-                        dismiss()
+                    
+                    Divider()
+                    
+                    // Details
+                    DetailRow(label: "Capital", value: country.capital)
+                    
+                    DetailRow(label: "Population", value: formattedPopulation(country.population))
+                    
+                    DetailRow(label: "Region", value: country.region)
+                    
+                    if let currency = country.currency {
+                        DetailRow(label: "Currency", value: currency)
                     }
+                    
+                    DetailRow(label: "Coordinates", value: String(format: "%.4f°, %.4f°", country.latitude, country.longitude))
+                    
+                    Divider()
+                    
+                    // Music Genres Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Originating Genres")
+                            .font(.headline)
+                            .padding(.horizontal)
+                            .foregroundColor(.appTextLight)
+
+                        
+                        Text("Tap a genre to discover artists and create a playlist")
+                            .font(.caption)
+                            .foregroundColor(.appTextLight)
+                            .opacity(0.7)
+                            .padding(.horizontal)
+                        
+                        
+                        VStack(spacing: 12) {
+                            ForEach(country.genres, id: \.self) { genre in
+                                NavigationLink(destination: PlaylistPreviewView(country: country, genre: genre)) {
+                                    GenreButton(genre: genre)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding(.vertical)
                 }
-            }
-            .sheet(isPresented: $showPlaylistPreview) {
-                if let genre = selectedGenre {
-                    PlaylistPreviewView(country: country, genre: genre)
-                }
+                .padding()
             }
         }
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     private func formattedPopulation(_ population: Int) -> String {
@@ -136,12 +114,10 @@ struct DetailRow: View {
 
 struct GenreButton: View {
     let genre: String
-    let action: () -> Void
     let buttonCyan = Color(red: 0.0, green: 0.671, blue: 0.725)
 
     
     var body: some View {
-        Button(action: action) {
             HStack {
                 Image(systemName: "music.note.list")
                     .foregroundColor(.appTextLight)
@@ -159,10 +135,8 @@ struct GenreButton: View {
                     .font(.caption)
             }
             .padding()
-            .background(Color(buttonCyan))
+            .background(LinearGradient(colors: [.buttonBackgroundDark, .buttonBackgroundLight], startPoint: .bottom, endPoint: .top))
             .cornerRadius(12)
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 

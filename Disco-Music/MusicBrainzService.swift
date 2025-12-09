@@ -122,3 +122,36 @@ class MusicBrainzService: ObservableObject {
     }
 }
 
+class MockMusicBrainzService: MusicBrainzService {
+    override func searchArtists(country: String, genre: String, limit: Int = 10) async {
+        await MainActor.run {
+            self.isLoading = true
+            self.errorMessage = nil
+        }
+        
+        // Simulate a network delay (optional)
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        let dummyArtists: [Artist] = [
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Johnny Cash", displayInfo: "Country", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Bob Dylan", displayInfo: "Folk", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Elvis Presley", displayInfo: "Rock and Roll", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Grateful Dead", displayInfo: "Rock", type: "Group", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Willie Nelson", displayInfo: "Country", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Wilco", displayInfo: "Alt-Country", type: "Group", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Ella Fitzgerald", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Miles Davis", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Louis Armstrong", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Billie Holiday", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Frank Sinatra", displayInfo: "Vocal", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Phish", displayInfo: "Rock", type: "Group", country: "US")
+        ]
+        
+        await MainActor.run {
+            self.artists = dummyArtists
+            self.isLoading = false
+            self.errorMessage = nil
+        }
+    }
+}
+

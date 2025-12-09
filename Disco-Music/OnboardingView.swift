@@ -105,8 +105,8 @@ struct IntroductionPage: View {
                                 Color(red: 81/255, green: 175/255, blue: 134/255),
                                 Color(red: 68/255, green: 148/255, blue: 151/255)
                             ],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
                     .cornerRadius(16)
@@ -176,8 +176,8 @@ struct LocationPage: View {
                                 Color(red: 81/255, green: 175/255, blue: 134/255),
                                 Color(red: 68/255, green: 148/255, blue: 151/255)
                             ],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
                     .cornerRadius(16)
@@ -409,8 +409,8 @@ struct FeaturePage: View {
                                     Color(red: 81/255, green: 175/255, blue: 134/255),
                                     Color(red: 68/255, green: 148/255, blue: 151/255)
                                 ],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
                         )
                         .cornerRadius(18)

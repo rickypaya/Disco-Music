@@ -15,167 +15,180 @@ struct PlaylistPreviewView: View {
     @State private var isGenerating = false
     @State private var generationError: String?
     @State private var artistImageURLs: [Artist.ID: String] = [:]
+    @State private var isLiked: Bool = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-                VStack(spacing: 0) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Text(country.flagEmoji)
-                            .font(.system(size: 60))
+        ZStack {
+            LinearGradient(colors: [.appBackgroundLight, .appBackgroundDark], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            VStack(spacing: 10) {
+                // Header
+                VStack(spacing: 8) {
+                    HStack {
+                        Text(country.name)
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.trailing, 8)
                         
-                        HStack {
-                            Text(country.name)
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                                .padding(.trailing, 8)
-                            
-                            Text(genre)
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.25)
-                                    .clipShape(Capsule())
-                                )
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    
-                    // Artists List
-                    if musicService.isLoading {
+                        Text(genre)
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.25)
+                                .clipShape(Capsule())
+                            )
                         Spacer()
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text("Discovering artists...")
+                        
+                        Button(action: {
+                            isLiked.toggle()
+                            if isLiked {
+                                storageManager.addLikedGenre(genre, for: country)
+                            } else {
+                                storageManager.removeLikedGenre(genre, for: country)
+                            }
+                        }) {
+                            Image(systemName: isLiked ? "heart.fill" : "heart")
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding()
+                //.padding(.bottom, 20)
+                .frame(maxWidth: .infinity)
+                
+                // Artists List
+                if musicService.isLoading {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    Text("Discovering artists...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top)
+                    Spacer()
+                } else if let errorMessage = musicService.errorMessage {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 40))
+                            .foregroundColor(.orange)
+                        Text(errorMessage)
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Button("Try Again") {
+                            Task {
+                                await musicService.searchArtists(country: country.name, genre: genre)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    Spacer()
+                } else if musicService.artists.isEmpty {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        Image(systemName: "music.note.slash")
+                            .font(.system(size: 40))
+                            .foregroundColor(.gray)
+                        Text("No artists found")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                        Text("Try searching for a different genre")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .padding(.top)
-                        Spacer()
-                    } else if let errorMessage = musicService.errorMessage {
-                        Spacer()
-                        VStack(spacing: 12) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.system(size: 40))
-                                .foregroundColor(.orange)
-                            Text(errorMessage)
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                            
-                            Button("Try Again") {
-                                Task {
-                                    await musicService.searchArtists(country: country.name, genre: genre)
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                        Spacer()
-                    } else if musicService.artists.isEmpty {
-                        Spacer()
-                        VStack(spacing: 12) {
-                            Image(systemName: "music.note.slash")
-                                .font(.system(size: 40))
-                                .foregroundColor(.gray)
-                            Text("No artists found")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                            Text("Try searching for a different genre")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                Text("Featured Artists")
-                                    .font(.headline)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
+                    }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack {
+                            ForEach(0..<musicService.artists.count / 6 + (musicService.artists.count % 6 == 0 ? 0 : 1), id: \.self) { groupIndex in
+                                let startIndex = groupIndex * 6
+                                let endIndex = min(startIndex + 6, musicService.artists.count)
+                                let currentGroup = Array(musicService.artists[startIndex..<endIndex])
                                 
-                                LazyVStack(spacing: 12) {
-                                    ForEach(musicService.artists) { artist in
-                                        ArtistCard(
+                                ZStack {
+                                    ForEach(currentGroup.indices, id: \.self) { indexInGroup in
+                                        let artist = currentGroup[indexInGroup]
+                                        GroupedArtistPhotoView(
                                             artist: artist,
-                                            imageUrl: artistImageURLs[artist.id]
+                                            imageUrl: artistImageURLs[artist.id],
+                                            positionIndex: indexInGroup
                                         )
                                         .task {
                                             await loadImageForArtist(artist)
                                         }
                                     }
                                 }
-                                .padding(.horizontal)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 220)
+                                
                             }
                         }
-                        
-                        // Generate Button
-                        VStack {
-                            if isGenerating {
+                        .padding(.horizontal, 0)
+                        .padding(.top, 20)
+                    }
+                    
+                    // Generate Button
+                    VStack {
+                        if isGenerating {
+                            HStack {
+                                ProgressView()
+                                    .tint(.white)
+                                Text("Generating Playlist...")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(LinearGradient(colors: [.buttonBackgroundLight, .buttonBackgroundDark], startPoint: .top, endPoint: .bottom))
+                            .cornerRadius(12)
+                            .padding()
+                        } else {
+                            Button(action: {
+                                generatePlaylist()
+                            }) {
                                 HStack {
-                                    ProgressView()
-                                        .tint(.white)
-                                    Text("Generating Playlist...")
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title3)
+                                    Text("Generate Playlist")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.white)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color.blue.opacity(0.7))
+                                .background(
+                                    LinearGradient(
+                                            gradient: Gradient(colors: [.cyan, .blue]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ))
+                                .foregroundColor(.white)
                                 .cornerRadius(12)
-                                .padding()
-                            } else {
-                                Button(action: {
-                                    generatePlaylist()
-                                }) {
-                                    HStack {
-                                        Image(systemName: "play.circle.fill")
-                                            .font(.title3)
-                                        Text("Generate Playlist")
-                                            .fontWeight(.semibold)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(
-                                        LinearGradient(
-                                                gradient: Gradient(colors: [.cyan, .blue]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ))
-                                    .foregroundColor(.white)
-                                    .cornerRadius(12)
-                                }
-                                .padding()
-                                .background(.clear)
                             }
-                            
-                            if let error = generationError {
-                                Text(error)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
+                            .padding()
+                            .background(.clear)
+                        }
+                        
+                        if let error = generationError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                         }
                     }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-            }
             .task {
                 await musicService.searchArtists(country: country.name, genre: genre)
+                isLiked = storageManager.isGenreLiked(genre, for: country)
             }
             .sheet(item: $generatedPlaylist) { playlist in
                 PlaylistDetailView(
@@ -262,18 +275,23 @@ struct PlaylistPreviewView: View {
     }
 }
 
-// MARK: - Artist Card
+// MARK: - Artist Photo View
 
-struct ArtistCard: View {
+struct ArtistPhotoView: View {
     let artist: Artist
-    let imageUrl: String? // TODO: Add this parameter
-    let buttonCyan = Color(red: 0.0, green: 0.67, blue: 0.73)
-
+    let imageUrl: String?
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Artist avatar with image or placeholder
+        VStack(spacing: 5) { // Changed to VStack with small spacing
             ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(width: 75, height: 75)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.2), lineWidth: 0.1)
+                    )
+                
                 if let imageUrl = imageUrl, let url = URL(string: imageUrl) {
                     AsyncImage(url: url) { phase in
                         switch phase {
@@ -281,62 +299,117 @@ struct ArtistCard: View {
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 60, height: 60)
+                                .frame(width: 65, height: 65) // Adjusted frame to fit new circle size
                                 .clipShape(Circle())
                         case .failure(_), .empty:
-                            placeholderCircle
+                            placeholderImage
                         @unknown default:
-                            placeholderCircle
+                            placeholderImage
                         }
                     }
                 } else {
-                    placeholderCircle
+                    placeholderImage
                 }
             }
             
-            // Rest of the card remains the same
-            VStack(alignment: .leading, spacing: 4) {
-                Text(artist.name)
-                    .font(.headline)
-                    .lineLimit(1)
-                    .foregroundColor(.appTextLight)
-                
-                Text(artist.displayInfo ?? "Artist")
-                    .font(.caption)
-                    .foregroundColor(.appTextLight)
-                    .opacity(0.7)
-                    //.foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
-                .font(.caption)
-            
+            Text(artist.name)
+                .font(.caption2)
+                .foregroundColor(.white)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
         }
-        .padding()
-        .background(
-            Color(buttonCyan))
-        .cornerRadius(12)
+        .padding(.vertical, 10)
+        .padding(.top, 20)
     }
     
-    //TODO: REPLACE holders with images from spotify
-    private var placeholderCircle: some View {
-        Circle()
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+    private var placeholderImage: some View {
+        Image(systemName: "person.circle.fill")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
             .frame(width: 60, height: 60)
-            .overlay(
-                Image(systemName: "music.mic")
-                    .foregroundColor(.appTextLight)
-                    .font(.title2)
-            )
+            .foregroundColor(.gray.opacity(0.5))
+    }
+}
+
+// MARK: - Grouped Artist Photo View
+
+struct GroupedArtistPhotoView: View {
+    let artist: Artist
+    let imageUrl: String?
+    let positionIndex: Int
+    
+    var body: some View {
+        // Determine offset based on positionIndex within the group of 6
+        let offsets: [(x: CGFloat, y: CGFloat)] = [
+            // Define offsets that are tighter and create overlap
+            (x: -100, y: -60), // Top-left
+            (x: 0, y: -90),    // Top-middle (higher)
+            (x: 100, y: -60),  // Top-right
+            (x: -120, y: 50),   // Mid-left
+            (x: 120, y: 50),    // Mid-right
+            (x: 0, y: 30)      // Bottom-middle
+        ]
+        
+        let offset = offsets[positionIndex % offsets.count]
+        
+        return ArtistPhotoView(
+            artist: artist,
+            imageUrl: imageUrl
+        )
+        .offset(x: offset.x, y: offset.y)
+    }
+}
+
+// MARK: - Previews
+
+struct PlaylistPreviewView_Previews: PreviewProvider {
+    static var previews: some View {
+        // Create a sample country and genre for the preview
+        let sampleCountry = Country(
+            name: "United States",
+            capital: "Washington, D.C.",
+            latitude: 38.9072,
+            longitude: -77.0369,
+            population: 331002651,
+            flagEmoji: "🇺🇸",
+            region: "North America",
+            currency: "USD",
+            genres: ["Rock", "Pop", "Hip Hop", "Jazz", "Country", "Electronic"]
+        )
+        let sampleGenre = "Rock"
+        
+        // Create dummy artists for preview
+        let dummyArtists: [Artist] = [
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Johnny Cash", displayInfo: "Country", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Bob Dylan", displayInfo: "Folk", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Elvis Presley", displayInfo: "Rock and Roll", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Grateful Dead", displayInfo: "Rock", type: "Group", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Willie Nelson", displayInfo: "Country", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Wilco", displayInfo: "Alt-Country", type: "Group", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Ella Fitzgerald", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Miles Davis", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Louis Armstrong", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Billie Holiday", displayInfo: "Jazz", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Frank Sinatra", displayInfo: "Vocal", type: "Person", country: "US"),
+            Artist(id: UUID().uuidString, spotifyID: nil, name: "Phish", displayInfo: "Rock", type: "Group", country: "US")
+        ]
+        
+        // Create a mock MusicBrainzService
+        let mockMusicService = MusicBrainzService()
+        mockMusicService.artists = dummyArtists
+        
+        // Create dummy artistImageURLs (empty strings will trigger placeholder in ArtistPhotoView)
+        var dummyImageURLs: [Artist.ID: String] = [:]
+        for artist in dummyArtists {
+            dummyImageURLs[artist.id] = ""
+        }
+        
+        return PlaylistPreviewView(
+            country: sampleCountry,
+            genre: sampleGenre
+        )
+        .environmentObject(MockMusicBrainzService()) // Inject the mock service
+        .environmentObject(SpotifyWebAPI.shared) // Keep if other parts of the view need it, otherwise can mock
+        .environmentObject(PlaylistStorageManager.shared) // Keep if other parts of the view need it
     }
 }
