@@ -36,9 +36,7 @@ struct RecentPlaylistsView: View {
                 // Background gradient
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color(red: 38/255, green: 147/255, blue: 155/255),
-                        Color(red: 25/255, green: 110/255, blue: 125/255),
-                        Color(red: 20/255, green: 90/255, blue: 100/255)
+                        Color(red: 26/255, green: 43/255, blue: 93/255), .appBackgroundDark
                     ]),
                     startPoint: .top,
                     endPoint: .bottom
@@ -51,14 +49,14 @@ struct RecentPlaylistsView: View {
                     playlistListView
                 }
             }
-            .navigationTitle("Recent Playlists")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("Recent Playlists").foregroundStyle(Color.white)
+            .navigationBarTitleDisplayMode(.automatic)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(
+            /*.toolbarBackground(
                 Color(red: 38/255, green: 147/255, blue: 155/255),
                 for: .navigationBar
-            )
+            )*/
             .toolbar {
                 if !storageManager.savedPlaylists.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
