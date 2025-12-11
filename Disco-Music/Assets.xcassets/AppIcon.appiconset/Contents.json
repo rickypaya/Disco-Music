@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "DiscoLogo1.png",
+      "filename" : "Disco-Logo-Final.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "DiscoLogo1 1.png",
+      "filename" : "Disco-Logo-Final 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "DiscoLogo1 2.png",
+      "filename" : "Disco-Logo-Final 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
