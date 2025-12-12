@@ -1,6 +1,9 @@
 # DISCO - A geographic music origination exploration app.
 The goal of this application is to build an educational resource to not only understand what music originates in different countries, but also to listen to the actual music of those artists through genre-specific playlist generations, all through a simple login by authenticating with Spotify.
 
+# Testflight link
+https://testflight.apple.com/join/vFtHceJw
+
 ### Demo 1 MVP - 11/18
 - [x] Onboarding - Spotify login, Instructional views
 - [x] Main App feature - Globe gestures, selectable countries, ui overlay
