@@ -13,28 +13,28 @@ https://testflight.apple.com/join/vFtHceJw
 - [x] Onboarding - Spotify login, Instructional views
 - [x] Main App feature - Globe gestures, selectable countries, ui overlay
 - [x] Country detail view - Shows originating genres, country info
-- [ ] Playlist Generation - Rolled Over
+- [x] Playlist Generation - Rolled Over
 
 ### Tasks For 12/02
 
 #### Visuals 
-- [ ] Application Icon
-- [ ] Application Logo (Onboarding #1)
-- [ ] Finish Wireframes
+- [x] Application Icon
+- [x] Application Logo (Onboarding #1)
+- [x] Finish Wireframes
 #### Data
-- [ ] Refine Country Data - Decide which countries to have on lists, add capital coordinates, descriptions, and genres
-- [ ] Playlist Database Setup - Supabase db for user profiles, songs, playlists, and likes.
-- [ ] Privacy Policy
+- [x] Refine Country Data - Decide which countries to have on lists, add capital coordinates, descriptions, and genres
+- [x] Playlist Database Setup - Supabase db for user profiles, songs, playlists, and likes.
+- [x] Privacy Policy
 #### Application
-- [ ] Spotify API service
-- [ ] Spotify Auth in Onboarding
-- [ ] Playlist Generation/Add playlist on Spotify/Save to favorites
-- [ ] View other generated playlists on playlist preview 
+- [x] Spotify API service
+- [x] Spotify Auth in Onboarding
+- [x] Playlist Generation/Add playlist on Spotify/Save to favorites
+- [x] View other generated playlists on playlist preview 
 
 ### Final MVP Goals 12/09
-- [ ] AR Globe functionality, gestures, ui overlay
-- [ ] Complete Spotify Auth
-- [ ] Generate Playlist functionality/Add playlist to Spotify
-- [ ] Complete Country/Coordinates/Originating Genres Dataset
-- [ ] Complete App Design, Icon, App Store Previews
+- [x] AR Globe functionality, gestures, ui overlay
+- [x] Complete Spotify Auth
+- [x] Generate Playlist functionality/Add playlist to Spotify
+- [x] Complete Country/Coordinates/Originating Genres Dataset
+- [x] Complete App Design, Icon, App Store Previews
 - [ ] Published to App Store
