@@ -2,9 +2,9 @@
 The goal of this application is to build an educational resource to not only understand what music originates in different countries, but also to listen to the actual music of those artists through genre-specific playlist generations, all through a simple login by authenticating with Spotify.
 
 # Screenshots
-<img width="295" height="639" alt="Thumbnail_1" src="https://github.com/user-attachments/assets/a8fc150f-02bf-442e-b1a1-a02364d88661" />
-<img width="295" height="639" alt="Thumbnail_2" src="https://github.com/user-attachments/assets/3a9a333a-d280-4705-aae4-f04290cf174c" />
-<img width="295" height="639" alt="Thumbnail_3" src="https://github.com/user-attachments/assets/863b922a-2e27-4527-9f18-f5fe42241c95" />
+<img width="148" height="320" alt="Thumbnail_1" src="https://github.com/user-attachments/assets/a8fc150f-02bf-442e-b1a1-a02364d88661" />
+<img width="148" height="320" alt="Thumbnail_2" src="https://github.com/user-attachments/assets/3a9a333a-d280-4705-aae4-f04290cf174c" />
+<img width="148" height="320" alt="Thumbnail_3" src="https://github.com/user-attachments/assets/863b922a-2e27-4527-9f18-f5fe42241c95" />
 
 # Testflight link
 https://testflight.apple.com/join/vFtHceJw
