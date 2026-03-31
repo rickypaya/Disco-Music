@@ -9,6 +9,11 @@ The goal of this application is to build an educational resource to not only und
 # Testflight link
 https://testflight.apple.com/join/vFtHceJw
 
+# App Details
+- Spotify API for app playback, playlist creation
+- MusicBrainz API for artist search by genre + country
+- RealityKit for 3D globe UI
+
 ### Demo 1 MVP - 11/18
 - [x] Onboarding - Spotify login, Instructional views
 - [x] Main App feature - Globe gestures, selectable countries, ui overlay
